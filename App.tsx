@@ -492,7 +492,7 @@ const App: React.FC = () => {
                 onBack={() => handleNavigate('home')} 
                 onNavigateNotice={(id) => handleNavigate('notice', { id })} 
             />
-        )}
+        )} 
         
         {currentPage === 'all-news' && (
             <AllNewsPage 
