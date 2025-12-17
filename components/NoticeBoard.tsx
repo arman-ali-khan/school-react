@@ -17,9 +17,9 @@ const NoticeBoard: React.FC<NoticeBoardProps> = ({ notices, onNavigateNotice, on
 
   // Show only first 5 items in the widget
   const displayNotices = filteredNotices.slice(0, 5);
-
+ 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm h-full flex flex-col transition-colors">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm flex flex-col transition-colors">
       <div className="bg-emerald-50 dark:bg-gray-700/50 p-3 border-b border-emerald-100 dark:border-gray-600 flex justify-between items-center">
         <h3 className="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-2">
             <div className="p-1.5 bg-emerald-600 dark:bg-emerald-700 rounded text-white">
