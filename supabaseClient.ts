@@ -1,4 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.48.1';
+
+import { createClient } from '@supabase/supabase-js';
 
 // Prioritize environment variables, then fallback to placeholders
 const supabaseUrl = (process.env as any).SUPABASE_URL || 'https://govnpshiusxsjfysklzg.supabase.co';
