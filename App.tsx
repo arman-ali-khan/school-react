@@ -163,7 +163,7 @@ const App: React.FC = () => {
         {currentPage === 'admin-dashboard' && user?.role === 'Admin' && (
             <AdminDashboard 
                 user={user} notices={notices} news={news} pages={pages} carouselItems={carouselItems} sidebarSections={sidebarSections} infoCards={infoCards} menuItems={menuItems} topBarConfig={topBarConfig} footerConfig={footerConfig} homeWidgets={homeWidgets}
-                onAddNotice={(n) => dispatch(addNoticeThunk(n))}
+                onAddNotice={(n) => dispatch(addNoticeThunk(n)).unwrap()}
                 onAddNews={() => {}} // Extend as needed
                 onDeleteNotice={(id) => dispatch(deleteNoticeThunk(id))}
                 onDeleteNews={() => {}} // Extend as needed

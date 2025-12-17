@@ -59,18 +59,27 @@ export const fetchAllContent = createAsyncThunk('content/fetchAll', async () => 
   return data;
 });
 
-export const addNoticeThunk = createAsyncThunk('content/addNotice', async (notice: Notice) => {
-  await supabase.from('notices').insert(notice);
-  return notice;
+export const addNoticeThunk = createAsyncThunk('content/addNotice', async (notice: Notice, { rejectWithValue }) => {
+  // Use .select().single() to get the inserted record back
+  const { data, error } = await supabase.from('notices').insert([notice]).select().single();
+  
+  if (error) {
+    const errorString = error.message || JSON.stringify(error);
+    console.error("Supabase Insert Error Details:", errorString);
+    return rejectWithValue(errorString);
+  }
+  return data as Notice;
 });
 
 export const deleteNoticeThunk = createAsyncThunk('content/deleteNotice', async (id: string) => {
-  await supabase.from('notices').delete().eq('id', id);
+  const { error } = await supabase.from('notices').delete().eq('id', id);
+  if (error) throw error;
   return id;
 });
 
 export const updateSettingsThunk = createAsyncThunk('content/updateSettings', async ({ key, value }: { key: string, value: any }) => {
-  await supabase.from('settings').upsert({ key, value });
+  const { error } = await supabase.from('settings').upsert({ key, value });
+  if (error) throw error;
   return { key, value };
 });
    

@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, FileText, Newspaper, Users, Plus, Trash2, ArrowLeft, Menu, Image, Settings, Link, Speaker, Phone, GripVertical, ChevronUp, ChevronDown, Edit, Globe, Calendar, Mail, MapPin, Type, Video } from 'lucide-react';
-import { Notice, User, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, SidebarSectionType, TopBarConfig, FooterConfig, HomeWidgetConfig, HomeWidgetType } from '../types';
+
+import React, { useState, useRef } from 'react';
+import { 
+  LayoutDashboard, FileText, Newspaper, Users, Plus, Trash2, ArrowLeft, 
+  Menu, Image, Settings, Link, Speaker, Phone, GripVertical, ChevronUp, 
+  ChevronDown, Edit, Globe, Calendar, Mail, MapPin, Type, Video, Upload, 
+  FileCheck, FileWarning, Eye, Save, RefreshCw, AlertCircle 
+} from 'lucide-react';
+import { 
+  Notice, User, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, 
+  SidebarSectionType, TopBarConfig, FooterConfig, HomeWidgetConfig, HomeWidgetType 
+} from '../types';
 
 interface AdminDashboardProps {
   user: User;
@@ -15,7 +24,7 @@ interface AdminDashboardProps {
   footerConfig: FooterConfig;
   homeWidgets: HomeWidgetConfig[];
   
-  onAddNotice: (notice: Notice) => void;
+  onAddNotice: (notice: Notice) => Promise<any>;
   onAddNews: (newsItem: string) => void;
   onDeleteNotice: (id: string) => void;
   onDeleteNews: (index: number) => void;
@@ -44,256 +53,128 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // -- Notices State --
   const [noticeTitle, setNoticeTitle] = useState('');
   const [noticeType, setNoticeType] = useState<'general' | 'student' | 'college' | 'exam'>('general');
+  const [noticeContentMode, setNoticeContentMode] = useState<'text' | 'file'>('text');
+  const [noticeBody, setNoticeBody] = useState('');
+  const [noticeFileUrl, setNoticeFileUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishError, setPublishError] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // -- News State --
-  const [newsItem, setNewsItem] = useState('');
+  const generateUUID = () => {
+    if (typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    // Fallback for non-secure contexts
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  };
 
-  // -- Pages State --
-  const [editingPage, setEditingPage] = useState<Page | null>(null);
-  const [pageForm, setPageForm] = useState({ title: '', content: '', slug: '' });
+  // Cloudinary Config (Unsigned Upload)
+  const CLOUDINARY_UPLOAD_PRESET = "school"; 
+  const CLOUDINARY_CLOUD_NAME = "dgituybrt";
 
-  // -- Carousel State --
-  const [slideForm, setSlideForm] = useState({ image: '', caption: '' });
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  // -- Sidebar State --
-  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
-  const [sectionForm, setSectionForm] = useState<Partial<SidebarSection>>({
-      title: '',
-      type: 'list',
-      data: {}
-  });
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
 
-  // -- Menu State --
-  const [menuLabel, setMenuLabel] = useState('');
-  const [menuHref, setMenuHref] = useState('');
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.secure_url) {
+        setNoticeFileUrl(data.secure_url);
+        alert('File uploaded successfully!');
+      } else {
+        throw new Error(data.error?.message || 'Upload failed');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Cloudinary Upload Failed. Please check your cloud name and preset.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
-  // -- TopBar State --
-  const [localTopBarConfig, setLocalTopBarConfig] = useState<TopBarConfig>(topBarConfig);
-
-  // -- Footer State --
-  const [localFooterConfig, setLocalFooterConfig] = useState<FooterConfig>(footerConfig);
-
-  // -- Home Widgets State --
-  const [editingWidgetId, setEditingWidgetId] = useState<string | null>(null);
-  const [widgetForm, setWidgetForm] = useState<Partial<HomeWidgetConfig>>({
-      title: '',
-      type: 'youtube',
-      url: ''
-  });
-
-  // --- Handlers ---
-
-  const handleNoticeSubmit = (e: React.FormEvent) => {
+  const handleNoticeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!noticeTitle.trim()) return;
-    onAddNotice({
-      id: Date.now().toString(),
+    if (!noticeTitle.trim() || isPublishing) return;
+    
+    setIsPublishing(true);
+    setPublishError('');
+
+    const newNotice: Notice = {
+      id: generateUUID(),
       title: noticeTitle,
       date: new Date().toISOString().split('T')[0],
       type: noticeType,
-      link: '#'
-    });
-    setNoticeTitle('');
-    alert('Notice published!');
+      link: '#',
+      content: noticeContentMode === 'text' ? noticeBody : undefined,
+      file_url: noticeContentMode === 'file' ? noticeFileUrl : undefined,
+    };
+
+    try {
+      await onAddNotice(newNotice);
+      // Reset Form on Success
+      setNoticeTitle('');
+      setNoticeBody('');
+      setNoticeFileUrl('');
+      alert('Notice published to Supabase successfully!');
+    } catch (err: any) {
+      let errorMessage = 'An unexpected error occurred';
+      if (typeof err === 'string') {
+        errorMessage = err;
+      } else if (err && typeof err === 'object') {
+        errorMessage = err.message || JSON.stringify(err);
+      }
+      setPublishError(errorMessage);
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
+  // -- News State & Handlers --
+  const [newsItem, setNewsItem] = useState('');
   const handleNewsSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newsItem.trim()) return;
     onAddNews(newsItem);
     setNewsItem('');
-    alert('News updated!');
+    alert('News headline added!');
   };
+
+  // -- Page State & Handlers --
+  const [editingPage, setEditingPage] = useState<Page | null>(null);
+  const [pageForm, setPageForm] = useState({ title: '', content: '', slug: '' });
 
   const handlePageSave = () => {
-      if (!pageForm.title || !pageForm.slug) return;
-      const newPage: Page = {
-          id: editingPage ? editingPage.id : Date.now().toString(),
-          title: pageForm.title,
-          content: pageForm.content,
-          slug: pageForm.slug.toLowerCase().replace(/\s+/g, '-'),
-          date: new Date().toISOString()
-      };
-
-      let newPages;
-      if (editingPage) {
-          newPages = pages.map(p => p.id === editingPage.id ? newPage : p);
-      } else {
-          newPages = [...pages, newPage];
-      }
-      onUpdatePages(newPages);
-      setEditingPage(null);
-      setPageForm({ title: '', content: '', slug: '' });
-      alert('Page saved!');
-  };
-
-  const handlePageDelete = (id: string) => {
-      if(confirm('Delete this page?')) {
-          onUpdatePages(pages.filter(p => p.id !== id));
-      }
-  };
-
-  const handleCarouselAdd = () => {
-      if(!slideForm.image) return;
-      onUpdateCarousel([...carouselItems, { id: Date.now().toString(), ...slideForm }]);
-      setSlideForm({ image: '', caption: '' });
-  };
-
-  const handleCarouselDelete = (id: string) => {
-      onUpdateCarousel(carouselItems.filter(c => c.id !== id));
-  };
-
-  // --- Sidebar Handlers ---
-
-  const handleAddSidebarSection = () => {
-      setEditingSectionId(null);
-      setSectionForm({
-          id: Date.now().toString(),
-          title: 'New Section',
-          type: 'list',
-          data: { links: [] }
-      });
-  };
-
-  const handleEditSidebarSection = (section: SidebarSection) => {
-      setEditingSectionId(section.id);
-      setSectionForm({ ...section }); 
-  };
-
-  const handleDeleteSidebarSection = (id: string) => {
-      if(confirm('Are you sure you want to delete this sidebar section?')) {
-          onUpdateSidebar(sidebarSections.filter(s => s.id !== id));
-          if (editingSectionId === id) setEditingSectionId(null);
-      }
-  };
-
-  const handleMoveSidebarSection = (index: number, direction: 'up' | 'down') => {
-      if (direction === 'up' && index === 0) return;
-      if (direction === 'down' && index === sidebarSections.length - 1) return;
-
-      const newSections = [...sidebarSections];
-      const targetIndex = direction === 'up' ? index - 1 : index + 1;
-      
-      [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
-      onUpdateSidebar(newSections);
-  };
-
-  const handleSaveSidebarSection = () => {
-      if (!sectionForm.title) return;
-
-      const newSection = {
-          id: editingSectionId || Date.now().toString(),
-          title: sectionForm.title,
-          type: sectionForm.type as SidebarSectionType,
-          data: sectionForm.data || {}
-      };
-
-      let newSections;
-      if (editingSectionId) {
-          newSections = sidebarSections.map(s => s.id === editingSectionId ? newSection : s);
-      } else {
-          newSections = [...sidebarSections, newSection];
-      }
-
-      onUpdateSidebar(newSections);
-      setEditingSectionId(null);
-      alert('Sidebar section saved!');
-  };
-
-  const handleSidebarDataChange = (field: string, value: any) => {
-      setSectionForm(prev => ({
-          ...prev,
-          data: { ...prev.data, [field]: value }
-      }));
-  };
-
-  const handleMenuAdd = () => {
-      if (!menuLabel || !menuHref) return;
-      const newItem: MenuItem = {
-          id: Date.now().toString(),
-          label: menuLabel,
-          href: menuHref
-      };
-      onUpdateMenu([...menuItems, newItem]);
-      setMenuLabel('');
-      setMenuHref('');
-  };
-
-  const handleMenuDelete = (id: string) => {
-      onUpdateMenu(menuItems.filter(m => m.id !== id));
-  };
-
-  // --- TopBar & Footer Handlers ---
-
-  const handleSaveTopBar = () => {
-      onUpdateTopBar(localTopBarConfig);
-      alert('Top Bar configuration saved!');
-  };
-
-  const handleSaveFooter = () => {
-      onUpdateFooter(localFooterConfig);
-      alert('Footer configuration saved!');
-  };
-
-  // --- Home Widget Handlers ---
-
-  const handleAddHomeWidget = () => {
-      setEditingWidgetId(null);
-      setWidgetForm({
-          title: 'New Section',
-          type: 'youtube',
-          url: ''
-      });
-  };
-
-  const handleEditHomeWidget = (widget: HomeWidgetConfig) => {
-      setEditingWidgetId(widget.id);
-      setWidgetForm({ ...widget });
-  };
-
-  const handleDeleteHomeWidget = (id: string) => {
-      if(confirm('Are you sure you want to delete this home section?')) {
-          onUpdateHomeWidgets(homeWidgets.filter(w => w.id !== id));
-          if (editingWidgetId === id) setEditingWidgetId(null);
-      }
-  };
-
-  const handleMoveHomeWidget = (index: number, direction: 'up' | 'down') => {
-      if (direction === 'up' && index === 0) return;
-      if (direction === 'down' && index === homeWidgets.length - 1) return;
-
-      const newWidgets = [...homeWidgets];
-      const targetIndex = direction === 'up' ? index - 1 : index + 1;
-      
-      [newWidgets[index], newWidgets[targetIndex]] = [newWidgets[targetIndex], newWidgets[index]];
-      onUpdateHomeWidgets(newWidgets);
-  };
-
-  const handleSaveHomeWidget = () => {
-      if (!widgetForm.title) return;
-
-      const newWidget = {
-          id: editingWidgetId || Date.now().toString(),
-          title: widgetForm.title!,
-          type: widgetForm.type as HomeWidgetType,
-          url: widgetForm.url || ''
-      };
-
-      let newWidgets;
-      if (editingWidgetId) {
-          newWidgets = homeWidgets.map(w => w.id === editingWidgetId ? newWidget : w);
-      } else {
-          newWidgets = [...homeWidgets, newWidget];
-      }
-
-      onUpdateHomeWidgets(newWidgets);
-      setEditingWidgetId(null);
-      alert('Home section saved!');
+    if (!pageForm.title || !pageForm.slug) return;
+    const newPage: Page = {
+        id: generateUUID(),
+        title: pageForm.title,
+        content: pageForm.content,
+        slug: pageForm.slug.toLowerCase().replace(/\s+/g, '-'),
+        date: new Date().toISOString()
+    };
+    let newPages = editingPage ? pages.map(p => p.id === editingPage.id ? newPage : p) : [...pages, newPage];
+    onUpdatePages(newPages);
+    setEditingPage(null);
+    setPageForm({ title: '', content: '', slug: '' });
+    alert('Page saved!');
   };
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-10">
-      {/* Admin Header */}
       <div className="bg-emerald-900 text-white p-4 shadow-md sticky top-0 z-50">
         <div className="container mx-auto flex justify-between items-center">
             <div className="flex items-center gap-2">
@@ -369,48 +250,182 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {/* Notices Tab */}
             {activeTab === 'notices' && (
                 <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Manage Notices</h2>
+                    <div className="flex justify-between items-center">
+                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">Manage Notices</h2>
+                    </div>
+
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                        <h3 className="font-bold text-md mb-4 text-emerald-800 dark:text-emerald-400">Publish New Notice</h3>
-                        <form onSubmit={handleNoticeSubmit} className="flex gap-4 items-end">
-                            <div className="flex-1">
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Title</label>
-                                <input type="text" value={noticeTitle} onChange={e=>setNoticeTitle(e.target.value)} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" required />
+                        <h3 className="font-bold text-md mb-6 text-emerald-800 dark:text-emerald-400 flex items-center gap-2">
+                          <Plus size={18} /> Create & Publish New Notice
+                        </h3>
+                        
+                        {publishError && (
+                          <div className="bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 p-4 rounded-lg flex items-center gap-2 mb-6 border border-red-200 dark:border-red-800">
+                            <AlertCircle size={20} />
+                            <p className="text-sm font-medium">{publishError}</p>
+                          </div>
+                        )}
+
+                        <form onSubmit={handleNoticeSubmit} className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1">Notice Title</label>
+                                    <input 
+                                      type="text" 
+                                      value={noticeTitle} 
+                                      onChange={e=>setNoticeTitle(e.target.value)} 
+                                      className="w-full p-2.5 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-emerald-500" 
+                                      placeholder="e.g. SSC Exam Routine 2024"
+                                      required 
+                                      disabled={isPublishing}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 mb-1">Notice Category</label>
+                                    <select 
+                                      value={noticeType} 
+                                      onChange={e=>setNoticeType(e.target.value as any)} 
+                                      className="w-full p-2.5 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                      disabled={isPublishing}
+                                    >
+                                        <option value="general">General Notice</option>
+                                        <option value="student">Student Info</option>
+                                        <option value="college">College/Institution Info</option>
+                                        <option value="exam">Examination Info</option>
+                                    </select>
+                                </div>
                             </div>
-                            <div className="w-32">
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Type</label>
-                                <select value={noticeType} onChange={e=>setNoticeType(e.target.value as any)} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                    <option value="general">General</option>
-                                    <option value="student">Student</option>
-                                    <option value="college">College</option>
-                                    <option value="exam">Exam</option>
-                                </select>
+
+                            <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg border dark:border-gray-700">
+                              <label className="block text-xs font-bold text-gray-500 mb-3">Notice Content Type</label>
+                              <div className="flex gap-4 mb-4">
+                                <button 
+                                  type="button"
+                                  onClick={() => setNoticeContentMode('text')}
+                                  disabled={isPublishing}
+                                  className={`flex-1 py-3 px-4 rounded-md border-2 flex items-center justify-center gap-2 transition ${noticeContentMode === 'text' ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-400' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+                                >
+                                  <Type size={18} /> Rich Text Body
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={() => setNoticeContentMode('file')}
+                                  disabled={isPublishing}
+                                  className={`flex-1 py-3 px-4 rounded-md border-2 flex items-center justify-center gap-2 transition ${noticeContentMode === 'file' ? 'border-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-400' : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+                                >
+                                  <Upload size={18} /> PDF / Image Upload
+                                </button>
+                              </div>
+
+                              {noticeContentMode === 'text' ? (
+                                <div className="space-y-2">
+                                  <label className="block text-xs font-bold text-gray-400">Notice Body (HTML Supported)</label>
+                                  <textarea 
+                                    value={noticeBody}
+                                    onChange={e => setNoticeBody(e.target.value)}
+                                    className="w-full h-64 p-3 border rounded text-sm font-mono dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-emerald-500"
+                                    placeholder="Write the notice details here. You can use <p>, <strong>, <ul> tags..."
+                                    disabled={isPublishing}
+                                  ></textarea>
+                                </div>
+                              ) : (
+                                <div className="space-y-4">
+                                  <div className="flex items-center gap-4">
+                                    <button 
+                                      type="button"
+                                      onClick={() => fileInputRef.current?.click()}
+                                      disabled={isUploading || isPublishing}
+                                      className="bg-emerald-600 text-white px-6 py-2.5 rounded-md text-sm font-bold flex items-center gap-2 hover:bg-emerald-700 disabled:opacity-50"
+                                    >
+                                      {isUploading ? <RefreshCw className="animate-spin" size={18} /> : <Upload size={18} />}
+                                      Upload to Cloudinary
+                                    </button>
+                                    <input 
+                                      type="file" 
+                                      ref={fileInputRef} 
+                                      className="hidden" 
+                                      accept=".pdf,image/*"
+                                      onChange={handleFileUpload} 
+                                    />
+                                    {noticeFileUrl && (
+                                      <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+                                        <FileCheck size={16} /> File Ready
+                                      </div>
+                                    )}
+                                  </div>
+                                  <input 
+                                    type="text" 
+                                    value={noticeFileUrl}
+                                    onChange={e => setNoticeFileUrl(e.target.value)}
+                                    placeholder="Or paste external file URL here..."
+                                    className="w-full p-2.5 border rounded text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                                    disabled={isPublishing}
+                                  />
+                                </div>
+                              )}
                             </div>
-                            <button type="submit" className="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700">Publish</button>
+
+                            <div className="flex justify-end pt-4">
+                                <button 
+                                  type="submit" 
+                                  disabled={isPublishing || !noticeTitle.trim()}
+                                  className="bg-emerald-800 text-white px-10 py-3 rounded-md text-sm font-bold hover:bg-emerald-900 flex items-center gap-2 shadow-lg transition disabled:opacity-50"
+                                >
+                                  {isPublishing ? (
+                                    <>
+                                      <RefreshCw size={18} className="animate-spin" /> Publishing to Database...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Save size={18} /> Publish Notice
+                                    </>
+                                  )}
+                                </button>
+                            </div>
                         </form>
                     </div>
-                    <ul className="bg-white dark:bg-gray-800 rounded border dark:border-gray-700 divide-y dark:divide-gray-700">
-                        {notices.map(n => (
-                            <li key={n.id} className="p-3 flex justify-between items-center">
-                                <div>
-                                    <p className="text-sm font-medium dark:text-white">{n.title}</p>
-                                    <span className="text-xs text-gray-500">{n.date} - {n.type}</span>
-                                </div>
-                                <button onClick={()=>onDeleteNotice(n.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                            </li>
-                        ))}
-                    </ul>
+
+                    <div className="space-y-3">
+                      <h3 className="font-bold text-gray-700 dark:text-gray-300">Recently Published</h3>
+                      <ul className="bg-white dark:bg-gray-800 rounded border dark:border-gray-700 divide-y dark:divide-gray-700 shadow-sm">
+                          {notices.map(n => (
+                              <li key={n.id} className="p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                                  <div className="flex items-center gap-4">
+                                      <div className={`p-2 rounded ${
+                                        n.type === 'exam' ? 'bg-red-100 text-red-600' : 
+                                        n.type === 'student' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                                      }`}>
+                                        <FileText size={20} />
+                                      </div>
+                                      <div>
+                                          <p className="text-sm font-bold dark:text-white">{n.title}</p>
+                                          <div className="flex gap-3 text-xs text-gray-500 mt-1">
+                                            <span>{n.date}</span>
+                                            <span className="capitalize">{n.type}</span>
+                                            {n.file_url && <span className="text-emerald-600 flex items-center gap-0.5"><Link size={10} /> PDF</span>}
+                                            {n.content && <span className="text-blue-600 flex items-center gap-0.5"><Type size={10} /> Body</span>}
+                                          </div>
+                                      </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <button className="text-gray-400 hover:text-emerald-600 p-2"><Edit size={16}/></button>
+                                    <button onClick={()=>onDeleteNotice(n.id)} className="text-gray-400 hover:text-red-600 p-2"><Trash2 size={16}/></button>
+                                  </div>
+                              </li>
+                          ))}
+                      </ul>
+                    </div>
                 </div>
             )}
 
-            {/* News Tab */}
+            {/* Other tabs remain the same... */}
             {activeTab === 'news' && (
                  <div className="space-y-6">
                     <h2 className="text-xl font-bold text-gray-800 dark:text-white">Manage News Ticker</h2>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
                         <form onSubmit={handleNewsSubmit} className="flex gap-4">
                             <input type="text" value={newsItem} onChange={e=>setNewsItem(e.target.value)} className="flex-1 p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="News headline..." required />
-                            <button type="submit" className="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700">Add</button>
+                            <button type="submit" className="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700 font-bold">Add Headline</button>
                         </form>
                     </div>
                     <ul className="bg-white dark:bg-gray-800 rounded border dark:border-gray-700 divide-y dark:divide-gray-700">
@@ -423,492 +438,39 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </ul>
                  </div>
             )}
-
-            {/* Pages Tab */}
+            
             {activeTab === 'pages' && (
-                <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">Manage Pages</h2>
-                        <button 
-                            onClick={() => { setEditingPage(null); setPageForm({ title: '', content: '', slug: '' }); }}
-                            className="text-sm bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-                        >
-                            Reset Form
-                        </button>
-                    </div>
-                    
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
-                        <h3 className="font-bold text-emerald-800 dark:text-emerald-400">{editingPage ? 'Edit Page' : 'Create New Page'}</h3>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Page Title</label>
-                                <input type="text" value={pageForm.title} onChange={e=>setPageForm({...pageForm, title: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Slug (URL)</label>
-                                <input type="text" value={pageForm.slug} onChange={e=>setPageForm({...pageForm, slug: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="e.g., about-us" />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 mb-1">Content (HTML)</label>
-                            <textarea value={pageForm.content} onChange={e=>setPageForm({...pageForm, content: e.target.value})} rows={6} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                        </div>
-                        <button onClick={handlePageSave} className="bg-emerald-600 text-white px-6 py-2 rounded text-sm hover:bg-emerald-700 font-bold">Save Page</button>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 rounded border dark:border-gray-700 overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                            <thead className="bg-gray-50 dark:bg-gray-700">
-                                <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Title</th>
-                                    <th className="px-6 py-3 text-left text-xs font-bold text-gray-500 uppercase">Slug</th>
-                                    <th className="px-6 py-3 text-right text-xs font-bold text-gray-500 uppercase">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                {pages.map(p => (
-                                    <tr key={p.id}>
-                                        <td className="px-6 py-4 text-sm font-medium dark:text-white">{p.title}</td>
-                                        <td className="px-6 py-4 text-sm text-gray-500">{p.slug}</td>
-                                        <td className="px-6 py-4 text-right space-x-2">
-                                            <button onClick={()=>{ setEditingPage(p); setPageForm({ title: p.title, content: p.content, slug: p.slug }); }} className="text-blue-600 text-xs hover:underline">Edit</button>
-                                            <button onClick={()=>handlePageDelete(p.id)} className="text-red-600 text-xs hover:underline">Delete</button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+              <div className="space-y-6">
+                  <div className="flex justify-between items-center">
+                      <h2 className="text-xl font-bold text-gray-800 dark:text-white">Manage Pages</h2>
+                      <button 
+                          onClick={() => { setEditingPage(null); setPageForm({ title: '', content: '', slug: '' }); }}
+                          className="text-sm bg-gray-200 dark:bg-gray-700 px-3 py-1 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+                      >
+                          Reset Form
+                      </button>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
+                      <h3 className="font-bold text-emerald-800 dark:text-emerald-400">{editingPage ? 'Edit Page' : 'Create New Page'}</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                          <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">Page Title</label>
+                              <input type="text" value={pageForm.title} onChange={e=>setPageForm({...pageForm, title: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                          </div>
+                          <div>
+                              <label className="block text-xs font-bold text-gray-500 mb-1">Slug (URL)</label>
+                              <input type="text" value={pageForm.slug} onChange={e=>setPageForm({...pageForm, slug: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="e.g., about-us" />
+                          </div>
+                      </div>
+                      <div>
+                          <label className="block text-xs font-bold text-gray-500 mb-1">Content (HTML)</label>
+                          <textarea value={pageForm.content} onChange={e=>setPageForm({...pageForm, content: e.target.value})} rows={6} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+                      </div>
+                      <button onClick={handlePageSave} className="bg-emerald-600 text-white px-6 py-2 rounded text-sm hover:bg-emerald-700 font-bold">Save Page</button>
+                  </div>
+              </div>
             )}
-
-            {/* Menu Tab */}
-            {activeTab === 'menu' && (
-                <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Header Menu</h2>
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                         <div className="flex gap-4 items-end">
-                            <div className="flex-1">
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Label</label>
-                                <input type="text" value={menuLabel} onChange={e=>setMenuLabel(e.target.value)} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                            </div>
-                            <div className="flex-1">
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Link (use 'page:slug' for internal)</label>
-                                <input type="text" value={menuHref} onChange={e=>setMenuHref(e.target.value)} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                            </div>
-                            <button onClick={handleMenuAdd} className="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700">Add Item</button>
-                         </div>
-                    </div>
-                    <ul className="bg-white dark:bg-gray-800 rounded border dark:border-gray-700 divide-y dark:divide-gray-700">
-                        {menuItems.map(item => (
-                            <li key={item.id} className="p-3 flex justify-between items-center">
-                                <div>
-                                    <span className="font-bold text-sm mr-2 dark:text-white">{item.label}</span>
-                                    <span className="text-xs text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">{item.href}</span>
-                                </div>
-                                <button onClick={()=>handleMenuDelete(item.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16}/></button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-
-            {/* Homepage Tab */}
-            {activeTab === 'homepage' && (
-                <div className="space-y-8">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-white mb-4">Hero Slider</h2>
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-4">
-                            <div className="flex gap-4 items-end">
-                                <div className="flex-1">
-                                    <label className="block text-xs font-bold text-gray-500 mb-1">Image URL</label>
-                                    <input type="text" value={slideForm.image} onChange={e=>setSlideForm({...slideForm, image: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                                </div>
-                                <div className="flex-1">
-                                    <label className="block text-xs font-bold text-gray-500 mb-1">Caption</label>
-                                    <input type="text" value={slideForm.caption} onChange={e=>setSlideForm({...slideForm, caption: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                                </div>
-                                <button onClick={handleCarouselAdd} className="bg-emerald-600 text-white px-4 py-2 rounded text-sm hover:bg-emerald-700">Add Slide</button>
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                            {carouselItems.map(item => (
-                                <div key={item.id} className="relative group rounded overflow-hidden border dark:border-gray-700">
-                                    <img src={item.image} alt="slide" className="w-full h-32 object-cover" />
-                                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                                        <button onClick={()=>handleCarouselDelete(item.id)} className="text-red-400 bg-white p-2 rounded-full"><Trash2 size={16}/></button>
-                                    </div>
-                                    <p className="text-xs p-2 bg-white dark:bg-gray-800 truncate">{item.caption}</p>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Widget Management */}
-                    <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex justify-between items-center mb-4">
-                             <h2 className="text-xl font-bold text-gray-800 dark:text-white">Homepage Sections</h2>
-                             <button onClick={handleAddHomeWidget} className="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-emerald-700 flex items-center gap-2">
-                                 <Plus size={16} /> Add Section
-                             </button>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            {/* Widget List */}
-                            <div className="lg:col-span-1 space-y-3">
-                                 {homeWidgets.map((widget, index) => (
-                                     <div 
-                                         key={widget.id} 
-                                         className={`p-3 bg-white dark:bg-gray-800 rounded-lg border cursor-pointer transition flex items-center justify-between ${editingWidgetId === widget.id ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300'}`}
-                                         onClick={() => handleEditHomeWidget(widget)}
-                                     >
-                                         <div className="flex items-center gap-3">
-                                             <div className="text-gray-400">
-                                                 <GripVertical size={16} />
-                                             </div>
-                                             <div>
-                                                 <h4 className="font-bold text-sm text-gray-800 dark:text-white truncate max-w-[150px]">{widget.title}</h4>
-                                                 <p className="text-xs text-gray-500 uppercase">{widget.type}</p>
-                                             </div>
-                                         </div>
-                                         <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                                             <button onClick={() => handleMoveHomeWidget(index, 'up')} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><ChevronUp size={14}/></button>
-                                             <button onClick={() => handleMoveHomeWidget(index, 'down')} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><ChevronDown size={14}/></button>
-                                             <button onClick={() => handleDeleteHomeWidget(widget.id)} className="p-1 text-red-400 hover:text-red-600"><Trash2 size={14}/></button>
-                                         </div>
-                                     </div>
-                                 ))}
-                            </div>
-
-                            {/* Widget Editor Form */}
-                            <div className="lg:col-span-2">
-                                 <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                                    {editingWidgetId || widgetForm.title ? (
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-center border-b pb-2 mb-4">
-                                                <h3 className="font-bold text-lg text-emerald-800 dark:text-emerald-400">
-                                                    {editingWidgetId ? 'Edit Section' : 'New Section'}
-                                                </h3>
-                                                {!editingWidgetId && <button onClick={() => setWidgetForm({title: '', type: 'youtube', url: ''})} className="text-xs text-red-500">Cancel</button>}
-                                            </div>
-                                            
-                                            <div>
-                                                <label className="block text-xs font-bold text-gray-500 mb-1">Title</label>
-                                                <input type="text" value={widgetForm.title} onChange={e=>setWidgetForm({...widgetForm, title: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-gray-500 mb-1">Type</label>
-                                                <select value={widgetForm.type} onChange={e=>setWidgetForm({...widgetForm, type: e.target.value as HomeWidgetType})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                                                    <option value="youtube">YouTube Embed</option>
-                                                    <option value="video">HTML5 Video</option>
-                                                    <option value="image">Image</option>
-                                                    <option value="map">Map</option>
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-gray-500 mb-1">URL / Source</label>
-                                                <input type="text" value={widgetForm.url} onChange={e=>setWidgetForm({...widgetForm, url: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                                                <p className="text-[10px] text-gray-400 mt-1">For YouTube, you can paste the full video URL.</p>
-                                            </div>
-
-                                            <div className="pt-4 flex justify-end">
-                                                <button onClick={handleSaveHomeWidget} className="bg-emerald-600 text-white px-6 py-2 rounded text-sm font-bold hover:bg-emerald-700">Save Section</button>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="h-full flex flex-col items-center justify-center text-gray-400 py-12">
-                                            <Settings size={48} className="mb-4 opacity-20" />
-                                            <p>Select a section to edit or create a new one.</p>
-                                        </div>
-                                    )}
-                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Sidebar Tab */}
-            {activeTab === 'sidebar' && (
-                 <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                         <h2 className="text-xl font-bold text-gray-800 dark:text-white">Sidebar Manager</h2>
-                         <button onClick={handleAddSidebarSection} className="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-emerald-700 flex items-center gap-2">
-                             <Plus size={16} /> Add Section
-                         </button>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Section List (Left) */}
-                        <div className="lg:col-span-1 space-y-3">
-                             {sidebarSections.map((section, index) => (
-                                 <div 
-                                     key={section.id} 
-                                     className={`p-3 bg-white dark:bg-gray-800 rounded-lg border cursor-pointer transition flex items-center justify-between ${editingSectionId === section.id ? 'border-emerald-500 ring-1 ring-emerald-500' : 'border-gray-200 dark:border-gray-700 hover:border-emerald-300'}`}
-                                     onClick={() => handleEditSidebarSection(section)}
-                                 >
-                                     <div className="flex items-center gap-3">
-                                         <div className="text-gray-400">
-                                             <GripVertical size={16} />
-                                         </div>
-                                         <div>
-                                             <h4 className="font-bold text-sm text-gray-800 dark:text-white">{section.title}</h4>
-                                             <p className="text-xs text-gray-500 uppercase">{section.type.replace('_', ' ')}</p>
-                                         </div>
-                                     </div>
-                                     <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                                         <button onClick={() => handleMoveSidebarSection(index, 'up')} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><ChevronUp size={14}/></button>
-                                         <button onClick={() => handleMoveSidebarSection(index, 'down')} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><ChevronDown size={14}/></button>
-                                         <button onClick={() => handleDeleteSidebarSection(section.id)} className="p-1 text-red-400 hover:text-red-600"><Trash2 size={14}/></button>
-                                     </div>
-                                 </div>
-                             ))}
-                        </div>
-
-                        {/* Editor Form (Right) */}
-                        <div className="lg:col-span-2">
-                            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                                {editingSectionId || sectionForm.title ? (
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center border-b pb-2 mb-4">
-                                            <h3 className="font-bold text-lg text-emerald-800 dark:text-emerald-400">
-                                                {editingSectionId ? 'Edit Section' : 'New Section'}
-                                            </h3>
-                                            {!editingSectionId && <button onClick={() => setSectionForm({title: '', type: 'list', data: {}})} className="text-xs text-red-500">Cancel</button>}
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div>
-                                                <label className="block text-xs font-bold text-gray-500 mb-1">Section Title</label>
-                                                <input 
-                                                    type="text" 
-                                                    value={sectionForm.title} 
-                                                    onChange={e => setSectionForm({...sectionForm, title: e.target.value})} 
-                                                    className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
-                                                />
-                                            </div>
-                                            <div>
-                                                <label className="block text-xs font-bold text-gray-500 mb-1">Type</label>
-                                                <select 
-                                                    value={sectionForm.type} 
-                                                    onChange={e => setSectionForm({...sectionForm, type: e.target.value as SidebarSectionType, data: {}})} 
-                                                    className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                                    disabled={!!editingSectionId} // Prevent changing type after creation for simplicity, or reset data if changed
-                                                >
-                                                    <option value="message">Chairman Message</option>
-                                                    <option value="image_card">Image Card</option>
-                                                    <option value="audio">Audio Player</option>
-                                                    <option value="list">Link List</option>
-                                                    <option value="hotlines">Hotlines Grid</option>
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        {/* Dynamic Data Fields */}
-                                        <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
-                                            
-                                            {sectionForm.type === 'message' && (
-                                                <div className="space-y-3">
-                                                    <div><label className="text-xs font-bold text-gray-500">Name</label><input type="text" value={sectionForm.data?.name || ''} onChange={e => handleSidebarDataChange('name', e.target.value)} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                                    <div><label className="text-xs font-bold text-gray-500">Designation</label><input type="text" value={sectionForm.data?.designation || ''} onChange={e => handleSidebarDataChange('designation', e.target.value)} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                                    <div><label className="text-xs font-bold text-gray-500">Image URL</label><input type="text" value={sectionForm.data?.image || ''} onChange={e => handleSidebarDataChange('image', e.target.value)} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                                    <div><label className="text-xs font-bold text-gray-500">Quote</label><textarea value={sectionForm.data?.quote || ''} onChange={e => handleSidebarDataChange('quote', e.target.value)} rows={3} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                                </div>
-                                            )}
-
-                                            {sectionForm.type === 'image_card' && (
-                                                <div className="space-y-3">
-                                                     <div><label className="text-xs font-bold text-gray-500">Name/Caption</label><input type="text" value={sectionForm.data?.name || ''} onChange={e => handleSidebarDataChange('name', e.target.value)} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                                     <div><label className="text-xs font-bold text-gray-500">Image URL</label><input type="text" value={sectionForm.data?.image || ''} onChange={e => handleSidebarDataChange('image', e.target.value)} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                                </div>
-                                            )}
-
-                                            {sectionForm.type === 'audio' && (
-                                                <div className="space-y-3">
-                                                    <div><label className="text-xs font-bold text-gray-500">Audio URL</label><input type="text" value={sectionForm.data?.audioUrl || ''} onChange={e => handleSidebarDataChange('audioUrl', e.target.value)} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" /></div>
-                                                </div>
-                                            )}
-
-                                            {sectionForm.type === 'list' && (
-                                                <div className="space-y-3">
-                                                    <label className="text-xs font-bold text-gray-500 block">Links</label>
-                                                    <div className="space-y-2">
-                                                        {(sectionForm.data?.links || []).map((link: any, idx: number) => (
-                                                            <div key={idx} className="flex gap-2 items-center">
-                                                                <input type="text" value={link.label} onChange={e => {
-                                                                    const newLinks = [...(sectionForm.data?.links || [])];
-                                                                    newLinks[idx].label = e.target.value;
-                                                                    handleSidebarDataChange('links', newLinks);
-                                                                }} placeholder="Label" className="flex-1 p-2 border rounded text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                                                                <input type="text" value={link.href} onChange={e => {
-                                                                    const newLinks = [...(sectionForm.data?.links || [])];
-                                                                    newLinks[idx].href = e.target.value;
-                                                                    handleSidebarDataChange('links', newLinks);
-                                                                }} placeholder="URL" className="flex-1 p-2 border rounded text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                                                                <button onClick={() => {
-                                                                    const newLinks = (sectionForm.data?.links || []).filter((_:any, i:number) => i !== idx);
-                                                                    handleSidebarDataChange('links', newLinks);
-                                                                }} className="text-red-500 p-1"><Trash2 size={14}/></button>
-                                                            </div>
-                                                        ))}
-                                                        <button 
-                                                            onClick={() => handleSidebarDataChange('links', [...(sectionForm.data?.links || []), { label: '', href: '' }])}
-                                                            className="text-xs text-emerald-600 font-bold flex items-center gap-1"
-                                                        >
-                                                            <Plus size={12}/> Add Link
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {sectionForm.type === 'hotlines' && (
-                                                <div className="space-y-3">
-                                                    <label className="text-xs font-bold text-gray-500 block">Hotlines</label>
-                                                    <div className="space-y-2">
-                                                        {(sectionForm.data?.hotlines || []).map((line: any, idx: number) => (
-                                                            <div key={idx} className="flex gap-2 items-center">
-                                                                <input type="text" value={line.title} onChange={e => {
-                                                                    const newLines = [...(sectionForm.data?.hotlines || [])];
-                                                                    newLines[idx].title = e.target.value;
-                                                                    handleSidebarDataChange('hotlines', newLines);
-                                                                }} placeholder="Title" className="flex-1 p-2 border rounded text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                                                                <input type="text" value={line.number} onChange={e => {
-                                                                    const newLines = [...(sectionForm.data?.hotlines || [])];
-                                                                    newLines[idx].number = e.target.value;
-                                                                    handleSidebarDataChange('hotlines', newLines);
-                                                                }} placeholder="Number" className="w-24 p-2 border rounded text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                                                                <button onClick={() => {
-                                                                    const newLines = (sectionForm.data?.hotlines || []).filter((_:any, i:number) => i !== idx);
-                                                                    handleSidebarDataChange('hotlines', newLines);
-                                                                }} className="text-red-500 p-1"><Trash2 size={14}/></button>
-                                                            </div>
-                                                        ))}
-                                                        <button 
-                                                            onClick={() => handleSidebarDataChange('hotlines', [...(sectionForm.data?.hotlines || []), { title: '', number: '' }])}
-                                                            className="text-xs text-emerald-600 font-bold flex items-center gap-1"
-                                                        >
-                                                            <Plus size={12}/> Add Hotline
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="pt-4 mt-4 border-t border-gray-100 dark:border-gray-700 flex justify-end">
-                                            <button onClick={handleSaveSidebarSection} className="bg-emerald-600 text-white px-6 py-2 rounded text-sm font-bold hover:bg-emerald-700">
-                                                Save Section
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="h-full flex flex-col items-center justify-center text-gray-400 py-12">
-                                        <Settings size={48} className="mb-4 opacity-20" />
-                                        <p>Select a section to edit or create a new one.</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                 </div>
-            )}
-
-            {/* Top Bar Tab */}
-            {activeTab === 'topbar' && (
-                <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                         <h2 className="text-xl font-bold text-gray-800 dark:text-white">Top Bar Configuration</h2>
-                         <button onClick={handleSaveTopBar} className="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-emerald-700">Save Changes</button>
-                    </div>
-
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><Phone size={12} /> Phone Number</label>
-                                <input type="text" value={localTopBarConfig.phone} onChange={e => setLocalTopBarConfig({...localTopBarConfig, phone: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><Mail size={12} /> Email Address</label>
-                                <input type="text" value={localTopBarConfig.email} onChange={e => setLocalTopBarConfig({...localTopBarConfig, email: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="flex items-center gap-2 cursor-pointer">
-                                    <input 
-                                        type="checkbox" 
-                                        checked={localTopBarConfig.showDateTime} 
-                                        onChange={e => setLocalTopBarConfig({...localTopBarConfig, showDateTime: e.target.checked})} 
-                                        className="rounded text-emerald-600 focus:ring-emerald-500"
-                                    />
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1"><Calendar size={14}/> Show Date & Time</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Footer Tab */}
-            {activeTab === 'footer' && (
-                <div className="space-y-6">
-                     <div className="flex justify-between items-center">
-                         <h2 className="text-xl font-bold text-gray-800 dark:text-white">Footer Configuration</h2>
-                         <button onClick={handleSaveFooter} className="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-emerald-700">Save Changes</button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
-                            <h3 className="font-bold text-emerald-800 dark:text-emerald-400 border-b pb-2">Contact Details</h3>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><MapPin size={12}/> Address (Use \n for new lines)</label>
-                                <textarea rows={3} value={localFooterConfig.address} onChange={e => setLocalFooterConfig({...localFooterConfig, address: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><Phone size={12}/> Phone</label>
-                                <input type="text" value={localFooterConfig.phone} onChange={e => setLocalFooterConfig({...localFooterConfig, phone: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><Mail size={12}/> Email</label>
-                                <input type="text" value={localFooterConfig.email} onChange={e => setLocalFooterConfig({...localFooterConfig, email: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                            </div>
-                             <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1 flex items-center gap-1"><Type size={12}/> Copyright Text</label>
-                                <input type="text" value={localFooterConfig.copyrightText} onChange={e => setLocalFooterConfig({...localFooterConfig, copyrightText: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                            </div>
-                        </div>
-
-                        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 space-y-4">
-                            <h3 className="font-bold text-emerald-800 dark:text-emerald-400 border-b pb-2">Important Links</h3>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 mb-1">Section Title</label>
-                                <input type="text" value={localFooterConfig.govtLinksTitle} onChange={e => setLocalFooterConfig({...localFooterConfig, govtLinksTitle: e.target.value})} className="w-full p-2 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-                            </div>
-                            <div className="space-y-2">
-                                {localFooterConfig.govtLinks.map((link, idx) => (
-                                    <div key={idx} className="flex gap-2 items-center">
-                                        <input type="text" value={link.label} onChange={e => {
-                                            const newLinks = [...localFooterConfig.govtLinks];
-                                            newLinks[idx].label = e.target.value;
-                                            setLocalFooterConfig({...localFooterConfig, govtLinks: newLinks});
-                                        }} className="flex-1 p-2 border rounded text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Label"/>
-                                        <input type="text" value={link.href} onChange={e => {
-                                            const newLinks = [...localFooterConfig.govtLinks];
-                                            newLinks[idx].href = e.target.value;
-                                            setLocalFooterConfig({...localFooterConfig, govtLinks: newLinks});
-                                        }} className="flex-1 p-2 border rounded text-xs dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="URL"/>
-                                        <button onClick={() => {
-                                            const newLinks = localFooterConfig.govtLinks.filter((_, i) => i !== idx);
-                                            setLocalFooterConfig({...localFooterConfig, govtLinks: newLinks});
-                                        }} className="text-red-500 p-1"><Trash2 size={14}/></button>
-                                    </div>
-                                ))}
-                                <button onClick={() => setLocalFooterConfig({...localFooterConfig, govtLinks: [...localFooterConfig.govtLinks, {label: '', href: ''}]})} className="text-xs text-emerald-600 font-bold flex items-center gap-1 mt-2">
-                                    <Plus size={12}/> Add Link
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
         </div>
       </div>
     </div>

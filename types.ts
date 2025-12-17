@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 export interface Notice {
@@ -6,6 +7,8 @@ export interface Notice {
   date: string;
   type: 'general' | 'student' | 'college' | 'exam';
   link: string;
+  content?: string; // HTML content for rich text
+  file_url?: string; // Cloudinary or external PDF/Image URL
 }
 
 export interface MenuItem {
