@@ -41,72 +41,6 @@ export const SIDEBAR_SECTIONS: SidebarSection[] = [
             image: "https://picsum.photos/200/200?random=10",
             quote: "We are committed to ensuring quality education and transparent examination systems for all students in the Rangpur division."
         }
-    },
-    {
-        id: '2',
-        type: 'list',
-        title: "Internal e-Services",
-        data: {
-            links: [
-                { label: 'Online Name Correction', href: '#', iconName: 'Edit' },
-                { label: 'e-SIF (Registration)', href: '#', iconName: 'UserPlus' },
-                { label: 'e-FF (Form Fill-up)', href: '#', iconName: 'FileText' },
-                { label: 'Result Archive', href: '#', iconName: 'Archive' },
-                { label: 'Webmail Account', href: '#', isExternal: true, iconName: 'Mail' },
-            ]
-        }
-    },
-    {
-        id: '3',
-        type: 'image_card',
-        title: "Important Document",
-        data: {
-            image: "https://picsum.photos/400/300?random=20",
-            name: "Board Meeting Minutes"
-        }
-    },
-    {
-        id: '4',
-        type: 'image_only',
-        title: "Logo Only",
-        data: {
-            image: "https://upload.wikimedia.org/wikipedia/en/thumb/8/8b/Board_of_Intermediate_and_Secondary_Education%2C_Dinajpur_Logo.svg/220px-Board_of_Intermediate_and_Secondary_Education%2C_Dinajpur_Logo.svg.png"
-        }
-    },
-    {
-        id: '5',
-        type: 'video',
-        title: "Intro Video",
-        data: {
-            url: "https://www.youtube.com/embed/zQDAi8tI-cU"
-        }
-    },
-    {
-        id: '6',
-        type: 'map',
-        title: "Find Us",
-        data: {
-            url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14392.296538356165!2d88.6331948!3d25.6015569!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fb5290a7895083%3A0x6a0c007133346914!2sEducation%20Board%2C%20Dinajpur!5e0!3m2!1sen!2sbd!4v1715800000000!5m2!1sen!2sbd"
-        }
-    },
-    {
-        id: '7',
-        type: 'hotlines',
-        title: "Help & Support",
-        data: {
-            hotlines: [
-                { title: 'Information Desk', number: '16221' },
-                { title: 'SSC Help', number: '01712-345678' }
-            ]
-        }
-    },
-    {
-        id: '8',
-        type: 'audio',
-        title: "National Anthem",
-        data: {
-            audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
-        }
     }
 ];
 
@@ -120,16 +54,6 @@ export const INFO_CARDS: InfoCard[] = [
             { text: 'কার্যক্রম', href: '#' },
             { text: 'ছবি গ্যালারি', href: '#' },
             { text: 'ভিডিও', href: '#' }
-        ]
-    },
-    {
-        id: '2',
-        title: 'শিক্ষক-কর্মচারী কর্নার',
-        iconName: 'UserCog',
-        links: [
-            { text: 'এমপিও নোটিশ', href: '#' },
-            { text: 'পদোন্নতি তালিকা', href: '#' },
-            { text: 'পেনশন ফরম', href: '#' }
         ]
     }
 ];
