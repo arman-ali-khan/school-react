@@ -14,7 +14,6 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ menuItems, onUpdate, generate
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
-  // Sync local state when props change (initial load)
   useEffect(() => {
     setLocalItems(menuItems);
     setHasChanges(false);
@@ -34,7 +33,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ menuItems, onUpdate, generate
   };
 
   const addRootItem = () => {
-    const newItem: MenuItem = { id: generateUUID(), label: 'New Page', href: '#' };
+    const newItem: MenuItem = { id: generateUUID(), label: 'New Page', href: 'home' };
     setLocalItems([...localItems, newItem]);
     setHasChanges(true);
   };
@@ -54,7 +53,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ menuItems, onUpdate, generate
   const addSubLink = (parentId: string) => {
     setLocalItems(localItems.map(item => {
       if (item.id === parentId) {
-        const children = [...(item.children || []), { id: generateUUID(), label: 'Sub Page', href: '#' }];
+        const children = [...(item.children || []), { id: generateUUID(), label: 'Sub Page', href: 'home' }];
         return { ...item, children };
       }
       return item;
@@ -127,7 +126,6 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ menuItems, onUpdate, generate
       <div className="space-y-4">
         {localItems.map((item, index) => (
           <div key={item.id} className="bg-white dark:bg-gray-800 rounded-2xl border dark:border-gray-700 shadow-sm overflow-hidden transition-all">
-            {/* Root Item Row */}
             <div className="flex items-center p-4 gap-4 bg-gray-50/50 dark:bg-gray-900/20 border-b dark:border-gray-700">
               <div className="flex flex-col gap-1">
                 <button type="button" onClick={() => moveItem(index, 'up')} disabled={index === 0} className="p-1 text-gray-300 hover:text-emerald-500 disabled:opacity-10"><ChevronDown size={14} className="rotate-180"/></button>
@@ -145,14 +143,15 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ menuItems, onUpdate, generate
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Destination (URL or slug)</label>
+                  <label className="text-[9px] font-black text-gray-400 uppercase tracking-tighter">Destination (e.g. home, page:slug, or URL)</label>
                   <div className="relative">
                     <Link size={12} className="absolute left-2.5 top-3 text-gray-400" />
                     <input 
                       type="text" 
                       value={item.href} 
                       onChange={e => updateRootItem(item.id, 'href', e.target.value)}
-                      className="w-full p-2 pl-8 bg-white dark:bg-gray-900 border-none rounded-lg text-xs dark:text-white font-mono" 
+                      className="w-full p-2 pl-8 bg-white dark:bg-gray-900 border-none rounded-lg text-xs dark:text-white font-mono"
+                      placeholder="e.g. page:about-us"
                     />
                   </div>
                 </div>
@@ -175,7 +174,6 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ menuItems, onUpdate, generate
               </div>
             </div>
 
-            {/* Sub-links Section */}
             {(item.children && item.children.length > 0) ? (
               <div className="p-4 pl-12 bg-emerald-50/20 dark:bg-gray-950/20 space-y-2">
                 {item.children.map((child) => (
@@ -194,7 +192,7 @@ const AdminNavbar: React.FC<AdminNavbarProps> = ({ menuItems, onUpdate, generate
                         value={child.href} 
                         onChange={e => updateSubLink(item.id, child.id, 'href', e.target.value)}
                         className="w-full p-2 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg text-[10px] dark:text-white font-mono" 
-                        placeholder="Child URL"
+                        placeholder="e.g. page:contact-us"
                       />
                     </div>
                     <button 

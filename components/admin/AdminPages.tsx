@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, Edit, Trash2, Save, RefreshCw } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, RefreshCw, Eye, Copy, Check } from 'lucide-react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { Page } from '../../types';
@@ -11,25 +11,36 @@ interface AdminPagesProps {
   onUpdate: (page: Page) => Promise<any>;
   onDelete: (id: string) => Promise<any> | void;
   generateUUID: () => string;
+  onPreviewPage?: (slug: string) => void;
 }
 
-const AdminPages: React.FC<AdminPagesProps> = ({ pages, onAdd, onUpdate, onDelete, generateUUID }) => {
+const AdminPages: React.FC<AdminPagesProps> = ({ pages, onAdd, onUpdate, onDelete, generateUUID, onPreviewPage }) => {
   const [editingPage, setEditingPage] = useState<Page | null>(null);
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
   const [content, setContent] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+
+  const sanitizeSlug = (val: string) => {
+    return val.toLowerCase()
+      .replace(/[^a-z0-9-\s]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+  };
 
   const handleSave = async () => {
     if (!title.trim() || isSaving) return;
     setIsSaving(true);
     try {
+      const finalSlug = sanitizeSlug(slug || title);
       const pageData: Page = {
         id: editingPage?.id || generateUUID(),
         title,
         content,
-        slug: slug || title.toLowerCase().replace(/\s+/g, '-'),
+        slug: finalSlug,
         date: new Date().toISOString()
       };
       if (editingPage) await onUpdate(pageData); else await onAdd(pageData);
@@ -44,7 +55,7 @@ const AdminPages: React.FC<AdminPagesProps> = ({ pages, onAdd, onUpdate, onDelet
   };
 
   const handleDeletePage = async (id: string) => {
-    if (window.confirm('Delete this page?')) {
+    if (window.confirm('Delete this page permanently?')) {
       setDeletingId(id);
       try {
         await onDelete(id);
@@ -52,22 +63,41 @@ const AdminPages: React.FC<AdminPagesProps> = ({ pages, onAdd, onUpdate, onDelet
         setDeletingId(null);
       }
     }
-  }
+  };
+
+  const copyToClipboard = (pageSlug: string) => {
+    const internalLink = `page:${pageSlug}`;
+    navigator.clipboard.writeText(internalLink);
+    setCopiedSlug(pageSlug);
+    setTimeout(() => setCopiedSlug(null), 2000);
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border dark:border-gray-700 shadow-sm space-y-4">
         <h3 className="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-2">
-          {editingPage ? <Edit size={18}/> : <Plus size={18}/>} {editingPage ? 'Edit Page' : 'Create Page'}
+          {editingPage ? <Edit size={18}/> : <Plus size={18}/>} {editingPage ? 'Edit Page' : 'Create New Page'}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-1">
             <label className="text-[10px] font-bold text-gray-400 uppercase">Page Title</label>
-            <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" placeholder="e.g., About Our School" />
+            <input 
+              type="text" 
+              value={title} 
+              onChange={e=>setTitle(e.target.value)} 
+              className="w-full p-2.5 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" 
+              placeholder="e.g., Admission Guidelines" 
+            />
           </div>
           <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">URL Slug (e.g. about-us)</label>
-            <input type="text" value={slug} onChange={e=>setSlug(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 font-mono" placeholder="slug-name" />
+            <label className="text-[10px] font-bold text-gray-400 uppercase">URL Slug (Will be sanitized)</label>
+            <input 
+              type="text" 
+              value={slug} 
+              onChange={e=>setSlug(sanitizeSlug(e.target.value))} 
+              className="w-full p-2.5 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 font-mono" 
+              placeholder="e.g., admission-rules" 
+            />
           </div>
         </div>
         
@@ -82,8 +112,8 @@ const AdminPages: React.FC<AdminPagesProps> = ({ pages, onAdd, onUpdate, onDelet
                 setContent(data);
               }}
               config={{
-                licenseKey: 'GPL', // Required for CKEditor 5 v42+
-                placeholder: 'Design your page content here...',
+                licenseKey: 'GPL',
+                placeholder: 'Write your page content here...',
                 toolbar: [
                   'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'insertTable', 'mediaEmbed', 'undo', 'redo'
                 ]
@@ -99,7 +129,7 @@ const AdminPages: React.FC<AdminPagesProps> = ({ pages, onAdd, onUpdate, onDelet
             className="bg-emerald-700 hover:bg-emerald-800 text-white px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50"
           >
             {isSaving ? <RefreshCw className="animate-spin" size={18}/> : <Save size={18}/>} 
-            {editingPage ? 'Update Page' : 'Save Page'}
+            {editingPage ? 'Update Page' : 'Publish Page'}
           </button>
           {editingPage && (
             <button onClick={reset} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-300 transition-all">
@@ -110,24 +140,41 @@ const AdminPages: React.FC<AdminPagesProps> = ({ pages, onAdd, onUpdate, onDelet
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 overflow-hidden shadow-sm">
-        <div className="bg-gray-50 dark:bg-gray-900/50 p-4 border-b dark:border-gray-700">
-          <h4 className="font-bold text-sm text-gray-500 uppercase tracking-widest">Existing Pages</h4>
+        <div className="bg-gray-50 dark:bg-gray-900/50 p-4 border-b dark:border-gray-700 flex justify-between items-center">
+          <h4 className="font-bold text-sm text-gray-500 uppercase tracking-widest">Active Site Pages</h4>
+          <span className="text-[10px] text-gray-400 font-medium">To link to these, use the format: <code className="bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded text-emerald-600">page:slug</code></span>
         </div>
         <ul className="divide-y dark:divide-gray-700">
           {pages.map(p => {
             const isThisDeleting = deletingId === p.id;
             return (
-              <li key={p.id} className={`p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 group transition-colors ${isThisDeleting ? 'opacity-50' : ''}`}>
-                <div className="flex items-center gap-4">
+              <li key={p.id} className={`p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 group transition-colors ${isThisDeleting ? 'opacity-50' : ''}`}>
+                <div className="flex items-center gap-4 flex-1">
                   <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center text-emerald-600">
                     <FileIcon size={20} />
                   </div>
                   <div>
                     <p className="font-bold text-sm dark:text-white group-hover:text-emerald-600 transition-colors">{p.title}</p>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Slug: /{p.slug}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-[10px] font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">/{p.slug}</span>
+                      <button 
+                        onClick={() => copyToClipboard(p.slug)}
+                        className={`text-[9px] font-bold flex items-center gap-1 transition-all ${copiedSlug === p.slug ? 'text-emerald-500' : 'text-gray-400 hover:text-emerald-600'}`}
+                      >
+                        {copiedSlug === p.slug ? <Check size={10}/> : <Copy size={10}/>}
+                        {copiedSlug === p.slug ? 'COPIED' : 'COPY INTERNAL LINK'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button 
+                    onClick={() => onPreviewPage?.(p.slug)}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-800 border dark:border-gray-600 text-gray-600 dark:text-gray-300 rounded-lg text-xs font-bold hover:border-emerald-500 hover:text-emerald-600 transition-all"
+                  >
+                    <Eye size={14}/> View
+                  </button>
                   <button 
                     disabled={isThisDeleting} 
                     onClick={()=>{
@@ -137,25 +184,23 @@ const AdminPages: React.FC<AdminPagesProps> = ({ pages, onAdd, onUpdate, onDelet
                       setContent(p.content); 
                       window.scrollTo({top:0, behavior:'smooth'});
                     }} 
-                    className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
-                    title="Edit Page"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 bg-white dark:bg-gray-800 border dark:border-gray-600 text-blue-500 rounded-lg text-xs font-bold hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all"
                   >
-                    <Edit size={18}/>
+                    <Edit size={14}/> Edit
                   </button>
                   <button 
                     disabled={isThisDeleting} 
                     onClick={()=>handleDeletePage(p.id)} 
                     className="p-2 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                    title="Delete Page"
                   >
-                    {isThisDeleting ? <RefreshCw size={18} className="animate-spin" /> : <Trash2 size={18}/>}
+                    {isThisDeleting ? <RefreshCw size={16} className="animate-spin" /> : <Trash2 size={16}/>}
                   </button>
                 </div>
               </li>
             );
           })}
           {pages.length === 0 && (
-            <li className="p-10 text-center text-gray-400 italic text-sm">No dynamic pages created yet.</li>
+            <li className="p-12 text-center text-gray-400 italic text-sm">No dynamic pages created. Start by creating your first page above.</li>
           )}
         </ul>
       </div>

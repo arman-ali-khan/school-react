@@ -84,6 +84,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
             onUpdate={p => handleAction(() => dispatch(updatePageThunk(p)).unwrap())} 
             onDelete={id => handleAction(() => dispatch(deletePageThunk(id)).unwrap())} 
             generateUUID={generateUUID} 
+            onPreviewPage={(slug) => {
+              // Construct specific location hash and force window reload or navigate if possible
+              window.location.hash = `page-viewer?slug=${slug}`;
+              onBack(); // Return to site to see the page
+            }}
           />
         );
       case 'carousel':
