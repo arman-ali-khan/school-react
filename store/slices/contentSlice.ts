@@ -129,8 +129,10 @@ export const updateSettingsThunk = createAsyncThunk('content/updateSettings', as
 });
 
 export const updateSidebarThunk = createAsyncThunk('content/updateSidebar', async (sections: SidebarSection[]) => {
-    await supabase.from('sidebar_sections').delete().neq('id', '0');
+    // Better delete logic: targeting every row via a numeric filter or a valid catch-all
+    await supabase.from('sidebar_sections').delete().neq('order_index', -999);
     if (sections.length === 0) return [];
+    // Stripping IDs to allow DB to generate fresh ones and avoid conflicts
     const payload = sections.map((s, index) => ({ title: s.title, type: s.type, data: s.data, order_index: index }));
     const { data, error } = await supabase.from('sidebar_sections').insert(payload).select();
     if (error) throw error;
@@ -138,9 +140,9 @@ export const updateSidebarThunk = createAsyncThunk('content/updateSidebar', asyn
 });
 
 export const updateInfoCardsThunk = createAsyncThunk('content/updateInfoCards', async (cards: InfoCard[]) => {
-    await supabase.from('info_cards').delete().neq('id', '0');
+    // Better delete logic: targeting every row via a numeric filter
+    await supabase.from('info_cards').delete().neq('order_index', -999);
     if (cards.length === 0) return [];
-    // Only save cards that aren't empty defaults
     const validCards = cards.filter(c => c.title !== 'New Category' || c.links.length > 0 || c.imageUrl);
     const payload = validCards.map((c, index) => ({ title: c.title, icon_name: c.iconName, image_url: c.imageUrl, links: c.links, order_index: index }));
     if (payload.length === 0) return [];
@@ -150,7 +152,7 @@ export const updateInfoCardsThunk = createAsyncThunk('content/updateInfoCards', 
 });
 
 export const updateHomeWidgetsThunk = createAsyncThunk('content/updateHomeWidgets', async (widgets: HomeWidgetConfig[]) => {
-    await supabase.from('home_widgets').delete().neq('id', '0');
+    await supabase.from('home_widgets').delete().neq('id', '00000000-0000-0000-0000-000000000000');
     if (widgets.length === 0) return [];
     const { data, error } = await supabase.from('home_widgets').insert(widgets).select();
     if (error) throw error;
