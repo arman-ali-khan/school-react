@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Save, Globe, Info, Search, Phone, RefreshCw } from 'lucide-react';
+import { Save, Globe, Info, Search, Phone, RefreshCw, Plus, Trash2, Link as LinkIcon, Mail } from 'lucide-react';
 import { TopBarConfig, FooterConfig, SchoolInfo, SEOMeta } from '../../types';
 
 interface AdminSiteSettingsProps {
@@ -17,16 +17,12 @@ interface AdminSiteSettingsProps {
 const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({ 
   topBar, footer, school, seo, onUpdateTopBar, onUpdateFooter, onUpdateSchool, onUpdateSEO 
 }) => {
-  // Local States for each section to handle editing before saving
   const [localSchool, setLocalSchool] = useState<SchoolInfo>(school);
   const [localTopBar, setLocalTopBar] = useState<TopBarConfig>(topBar);
   const [localSEO, setLocalSEO] = useState<SEOMeta>(seo);
   const [localFooter, setLocalFooter] = useState<FooterConfig>(footer);
-
-  // Loading/Saving states per section
   const [saving, setSaving] = useState<Record<string, boolean>>({});
 
-  // Sync local state when props change (e.g., initial load or external refresh)
   useEffect(() => { setLocalSchool(school); }, [school]);
   useEffect(() => { setLocalTopBar(topBar); }, [topBar]);
   useEffect(() => { setLocalSEO(seo); }, [seo]);
@@ -45,6 +41,25 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
     }
   };
 
+  const addFooterLink = () => {
+    setLocalFooter({
+      ...localFooter,
+      govtLinks: [...localFooter.govtLinks, { label: 'New Link', href: 'https://' }]
+    });
+  };
+
+  const updateFooterLink = (index: number, field: 'label' | 'href', value: string) => {
+    const updatedLinks = localFooter.govtLinks.map((link, i) => 
+      i === index ? { ...link, [field]: value } : link
+    );
+    setLocalFooter({ ...localFooter, govtLinks: updatedLinks });
+  };
+
+  const removeFooterLink = (index: number) => {
+    const updatedLinks = localFooter.govtLinks.filter((_, i) => i !== index);
+    setLocalFooter({ ...localFooter, govtLinks: updatedLinks });
+  };
+
   const SectionHeader = ({ icon: Icon, title }: { icon: any, title: string }) => (
     <h3 className="font-black text-emerald-800 dark:text-emerald-400 mb-6 flex items-center gap-2 uppercase tracking-widest text-sm">
       <Icon size={18}/> {title}
@@ -52,7 +67,7 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
   );
 
   const SaveButton = ({ section, onClick }: { section: string, onClick: () => void }) => (
-    <div className="flex justify-end pt-4">
+    <div className="flex justify-end pt-4 border-t dark:border-gray-700 mt-4">
       <button 
         type="button"
         onClick={onClick}
@@ -141,14 +156,85 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
       {/* Footer Config */}
       <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
         <SectionHeader icon={Globe} title="Footer Content" />
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Office Address</label>
-            <textarea value={localFooter.address} onChange={e=>setLocalFooter({...localFooter, address: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm h-24 focus:ring-2 focus:ring-emerald-500 resize-none" />
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Office Address</label>
+              <textarea value={localFooter.address} onChange={e=>setLocalFooter({...localFooter, address: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm h-full min-h-[120px] focus:ring-2 focus:ring-emerald-500 resize-none shadow-inner" />
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase">Copyright Line</label>
+                <input type="text" value={localFooter.copyrightText} onChange={e=>setLocalFooter({...localFooter, copyrightText: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Phone size={10}/> Footer Phone</label>
+                  <input type="text" value={localFooter.phone} onChange={e=>setLocalFooter({...localFooter, phone: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Mail size={10}/> Footer Email</label>
+                  <input type="email" value={localFooter.email} onChange={e=>setLocalFooter({...localFooter, email: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Copyright Line</label>
-            <input type="text" value={localFooter.copyrightText} onChange={e=>setLocalFooter({...localFooter, copyrightText: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+
+          <div className="pt-4 border-t dark:border-gray-700">
+            <div className="flex justify-between items-center mb-4">
+              <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1">
+                <LinkIcon size={12} /> Important Links (Footer)
+              </label>
+              <button 
+                type="button" 
+                onClick={addFooterLink}
+                className="text-[10px] font-black bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition-all flex items-center gap-1"
+              >
+                <Plus size={12} /> Add Link
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {localFooter.govtLinks.map((link, idx) => (
+                <div key={idx} className="flex flex-col sm:flex-row gap-3 bg-gray-50 dark:bg-gray-900/40 p-3 rounded-xl border border-gray-100 dark:border-gray-700 relative group transition-all hover:border-emerald-200 dark:hover:border-emerald-800">
+                  <div className="flex-1 space-y-1">
+                    <label className="text-[9px] font-bold text-gray-400 uppercase px-1">Label</label>
+                    <input 
+                      type="text" 
+                      value={link.label} 
+                      onChange={e => updateFooterLink(idx, 'label', e.target.value)}
+                      className="w-full p-1.5 bg-white dark:bg-gray-800 border-none rounded-lg text-xs font-bold dark:text-white focus:ring-1 focus:ring-emerald-500" 
+                      placeholder="Ministry of Education"
+                    />
+                  </div>
+                  <div className="flex-[2] space-y-1">
+                    <label className="text-[9px] font-bold text-gray-400 uppercase px-1">URL / Link</label>
+                    <input 
+                      type="text" 
+                      value={link.href} 
+                      onChange={e => updateFooterLink(idx, 'href', e.target.value)}
+                      className="w-full p-1.5 bg-white dark:bg-gray-800 border-none rounded-lg text-xs font-mono dark:text-white focus:ring-1 focus:ring-emerald-500" 
+                      placeholder="https://..."
+                    />
+                  </div>
+                  <div className="flex items-end pb-0.5">
+                    <button 
+                      type="button"
+                      onClick={() => removeFooterLink(idx)}
+                      className="p-2 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                      title="Remove Link"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {localFooter.govtLinks.length === 0 && (
+                <div className="p-8 text-center text-gray-400 italic text-xs border-2 border-dashed border-gray-100 dark:border-gray-700 rounded-xl">
+                  No links added to the footer section yet.
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <SaveButton section="Footer" onClick={() => handleSave('Footer', () => onUpdateFooter(localFooter))} />

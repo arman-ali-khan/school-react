@@ -12,7 +12,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { 
   updateSettingsThunk, updateSidebarThunk, updateInfoCardsThunk, 
-  updateHomeWidgetsThunk, addNoticeThunk, addNewsThunk, addPageThunk,
+  updateHomeWidgetsThunk, addNoticeThunk, updateNoticeThunk, addNewsThunk, updateNewsThunk, addPageThunk,
   updatePageThunk, deletePageThunk, deleteNoticeThunk, deleteNewsThunk 
 } from '../store/slices/contentSlice';
 
@@ -63,6 +63,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
           <AdminNotices 
             notices={notices} 
             onAdd={n => handleAction(() => dispatch(addNoticeThunk(n)).unwrap())} 
+            onUpdate={n => handleAction(() => dispatch(updateNoticeThunk(n)).unwrap())}
             onDelete={id => handleAction(() => dispatch(deleteNoticeThunk(id)).unwrap())} 
             generateUUID={generateUUID} 
           />
@@ -72,6 +73,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
           <AdminNews 
             news={news} 
             onAdd={n => handleAction(() => dispatch(addNewsThunk(n)).unwrap())} 
+            onUpdate={n => handleAction(() => dispatch(updateNewsThunk(n)).unwrap())}
             onDelete={id => handleAction(() => dispatch(deleteNewsThunk(id)).unwrap())} 
             generateUUID={generateUUID} 
           />
@@ -85,9 +87,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
             onDelete={id => handleAction(() => dispatch(deletePageThunk(id)).unwrap())} 
             generateUUID={generateUUID} 
             onPreviewPage={(slug) => {
-              // Construct specific location hash and force window reload or navigate if possible
               window.location.hash = `page-viewer?slug=${slug}`;
-              onBack(); // Return to site to see the page
+              onBack();
             }}
           />
         );

@@ -139,7 +139,9 @@ const App: React.FC = () => {
       case 'forgot-password': return <ForgotPasswordPage onBack={() => navigate('login')} />;
       case 'terms': return <TermsPage onBack={() => window.history.back()} />;
       case 'privacy': return <PrivacyPolicyPage onBack={() => window.history.back()} />;
-      case 'chairman': return <ChairmanMessagePage onBack={() => navigate('home')} />;
+      case 'chairman': 
+        const chairmanSection = sidebarSections.find(s => s.type === 'message');
+        return <ChairmanMessagePage onBack={() => navigate('home')} data={chairmanSection?.data} />;
       case 'notice': return <SingleNoticePage noticeId={routeParams.id} notices={notices} onBack={() => navigate('home')} />;
       case 'news': return <SingleNewsPage newsItem={news.find(n => n.id === routeParams.newsId)} onBack={() => navigate('home')} />;
       case 'all-notices': return <AllNoticesPage notices={notices} onBack={() => navigate('home')} onNavigateNotice={(id) => navigate('notice', { id })} />;
@@ -150,7 +152,6 @@ const App: React.FC = () => {
         return page ? <DynamicPage page={page} onBack={() => navigate('home')} /> : <NotFound />;
       case 'admin-dashboard':
         if (user?.role !== 'Admin') return <AccessDenied />;
-        // FIX: Remove unnecessary props as AdminDashboard uses Redux internal state and only requires onBack prop.
         return (
           <AdminDashboard 
             onBack={() => navigate('home')}

@@ -1,8 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NewsItem } from '../../types';
-
-const ITEM_HEIGHT = 24; 
+import { Newspaper } from 'lucide-react';
 
 interface NewsTickerProps {
     newsItems: NewsItem[];
@@ -11,53 +10,52 @@ interface NewsTickerProps {
 }
 
 const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems, onNavigateNews, onViewAll }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    if (newsItems.length === 0) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % newsItems.length);
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [newsItems.length]);
-
   return (
-    <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 p-2 flex items-center justify-between rounded-lg shadow-sm mb-4 transition-colors">
-       <div className="flex items-center flex-1 overflow-hidden px-1">
-          <span className="font-bold text-emerald-800 dark:text-emerald-400 mr-2 whitespace-nowrap text-sm">Update:</span>
-          
-          <div className="relative w-full overflow-hidden" style={{ height: `${ITEM_HEIGHT}px` }}>
-             <div 
-               className="transition-transform duration-700 ease-in-out flex flex-col"
-               style={{ transform: `translateY(-${currentIndex * ITEM_HEIGHT}px)` }}
-             >
-                {newsItems.map((item) => (
-                    <div 
-                        key={item.id} 
-                        className="flex items-center w-full"
-                        style={{ height: `${ITEM_HEIGHT}px` }}
-                    >
-                         <button 
-                             onClick={() => onNavigateNews(item)}
-                             className="text-sm text-gray-700 dark:text-gray-300 hover:text-emerald-700 dark:hover:text-emerald-400 hover:underline truncate w-full text-left"
-                         >
-                            {item.title}
-                         </button>
-                    </div>
-                ))}
-                {newsItems.length === 0 && (
-                     <div className="text-sm text-gray-500 italic">No news updates.</div>
-                )}
-             </div>
-          </div>
+    <div className="bg-white dark:bg-gray-800 border border-emerald-100 dark:border-gray-700 flex items-center rounded-lg shadow-sm mb-6 overflow-hidden transition-colors h-10 group/ticker">
+       {/* Label Section */}
+       <div className="bg-red-600 text-white px-4 h-full flex items-center gap-2 z-10 shadow-[4px_0_10px_rgba(0,0,0,0.1)] relative shrink-0">
+          <Newspaper size={14} className="animate-pulse" />
+          <span className="font-black text-[11px] uppercase tracking-widest whitespace-nowrap">Latest News</span>
        </div>
        
+       {/* Scrolling Content */}
+       <div className="flex-1 overflow-hidden relative h-full flex items-center">
+          {newsItems.length > 0 ? (
+            <div className="flex whitespace-nowrap animate-marquee group-hover/ticker:[animation-play-state:paused] hover:cursor-pointer">
+              {/* Double the items for seamless looping */}
+              {[...newsItems, ...newsItems].map((item, idx) => (
+                <button 
+                  key={`${item.id}-${idx}`}
+                  onClick={() => onNavigateNews(item)}
+                  className="inline-flex items-center px-6 text-sm text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors"
+                >
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-3 shrink-0" />
+                  {item.title}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="px-6 text-xs text-gray-400 italic">Connecting to live feed...</div>
+          )}
+       </div>
+       
+       {/* View All Button */}
        <button 
           onClick={onViewAll}
-          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white text-[11px] font-bold px-3 py-1 ml-3 rounded shadow-sm transition-colors uppercase tracking-wider shrink-0"
+          className="bg-emerald-50 dark:bg-gray-700 hover:bg-emerald-100 dark:hover:bg-gray-600 text-emerald-700 dark:text-emerald-300 text-[10px] font-black px-4 h-full border-l border-emerald-100 dark:border-gray-600 transition-colors uppercase tracking-widest shrink-0 z-10"
        >
-          All
+          All News
        </button>
+
+       <style>{`
+          @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .animate-marquee {
+            animation: marquee 40s linear infinite;
+          }
+       `}</style>
     </div>
   );
 };

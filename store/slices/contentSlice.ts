@@ -101,9 +101,23 @@ export const addNoticeThunk = createAsyncThunk('content/addNotice', async (notic
   return data as Notice;
 });
 
+export const updateNoticeThunk = createAsyncThunk('content/updateNotice', async (notice: Notice) => {
+  const { id, ...payload } = notice;
+  const { data, error } = await supabase.from('notices').update(payload).eq('id', id).select().single();
+  if (error) throw error;
+  return data as Notice;
+});
+
 export const addNewsThunk = createAsyncThunk('content/addNews', async (newsItem: NewsItem) => {
   const { id, ...payload } = newsItem;
   const { data, error } = await supabase.from('news_items').insert([payload]).select().single();
+  if (error) throw error;
+  return data as NewsItem;
+});
+
+export const updateNewsThunk = createAsyncThunk('content/updateNews', async (newsItem: NewsItem) => {
+  const { id, ...payload } = newsItem;
+  const { data, error } = await supabase.from('news_items').update(payload).eq('id', id).select().single();
   if (error) throw error;
   return data as NewsItem;
 });
@@ -129,10 +143,8 @@ export const updateSettingsThunk = createAsyncThunk('content/updateSettings', as
 });
 
 export const updateSidebarThunk = createAsyncThunk('content/updateSidebar', async (sections: SidebarSection[]) => {
-    // Better delete logic: targeting every row via a numeric filter or a valid catch-all
     await supabase.from('sidebar_sections').delete().neq('order_index', -999);
     if (sections.length === 0) return [];
-    // Stripping IDs to allow DB to generate fresh ones and avoid conflicts
     const payload = sections.map((s, index) => ({ title: s.title, type: s.type, data: s.data, order_index: index }));
     const { data, error } = await supabase.from('sidebar_sections').insert(payload).select();
     if (error) throw error;
@@ -140,7 +152,6 @@ export const updateSidebarThunk = createAsyncThunk('content/updateSidebar', asyn
 });
 
 export const updateInfoCardsThunk = createAsyncThunk('content/updateInfoCards', async (cards: InfoCard[]) => {
-    // Better delete logic: targeting every row via a numeric filter
     await supabase.from('info_cards').delete().neq('order_index', -999);
     if (cards.length === 0) return [];
     const validCards = cards.filter(c => c.title !== 'New Category' || c.links.length > 0 || c.imageUrl);
@@ -193,7 +204,9 @@ const contentSlice = createSlice({
         state.isLoading = false;
       })
       .addCase(addNoticeThunk.fulfilled, (state, action) => { state.notices.unshift(action.payload); })
+      .addCase(updateNoticeThunk.fulfilled, (state, action) => { state.notices = state.notices.map(n => n.id === action.payload.id ? action.payload : n); })
       .addCase(addNewsThunk.fulfilled, (state, action) => { state.news.unshift(action.payload); })
+      .addCase(updateNewsThunk.fulfilled, (state, action) => { state.news = state.news.map(n => n.id === action.payload.id ? action.payload : n); })
       .addCase(addPageThunk.fulfilled, (state, action) => { state.pages.unshift(action.payload); })
       .addCase(updatePageThunk.fulfilled, (state, action) => { state.pages = state.pages.map(p => p.id === action.payload.id ? action.payload : p); })
       .addCase(updateSidebarThunk.fulfilled, (state, action) => { state.sidebarSections = action.payload; })

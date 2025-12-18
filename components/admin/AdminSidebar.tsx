@@ -5,8 +5,10 @@ import {
   Layout, Type, MapPin, Video, Headphones, Phone, 
   Calendar, Clock, Link as LinkIcon, Image as ImageIcon,
   Timer, FileText, X, PlusCircle, Save, Upload, RefreshCw, FileCheck,
-  AlertCircle
+  AlertCircle, MessageSquareText, FileEdit
 } from 'lucide-react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { SidebarSection, SidebarSectionType, SidebarLink, SidebarHotline } from '../../types';
 
 interface AdminSidebarProps {
@@ -46,7 +48,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ sections, onUpdate, generat
 
   const handleAdd = (type: SidebarSectionType) => {
     const defaultData: Record<string, any> = {
-      message: { name: '', designation: '', image: '', quote: '' },
+      message: { name: '', designation: '', image: '', quote: '', content: '' },
       list: { links: [] },
       hotlines: { hotlines: [] },
       map: { url: '' },
@@ -63,7 +65,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ sections, onUpdate, generat
     const newSection: SidebarSection = {
       id: newId,
       type,
-      title: "New Widget",
+      title: type === 'message' ? "Chairman's Message" : "New Widget",
       data: defaultData[type] || {}
     };
     
@@ -226,11 +228,49 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ sections, onUpdate, generat
               {isThisEditing && (
                 <div className="p-6 space-y-6 animate-in slide-in-from-top-4">
                   {section.type === 'message' && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input type="text" placeholder="Name" value={section.data.name || ''} onChange={e=>handleLocalUpdate(sectionIdStr, {data: {...section.data, name: e.target.value}})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-sm dark:text-white" />
-                      <input type="text" placeholder="Designation" value={section.data.designation || ''} onChange={e=>handleLocalUpdate(sectionIdStr, {data: {...section.data, designation: e.target.value}})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-sm dark:text-white" />
-                      <div className="md:col-span-2">
-                        <UploaderField label="Profile Image" value={section.data.image} sectionId={sectionIdStr} dataKey="image" accept="image/*" />
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                           <label className="text-[10px] font-bold text-gray-400 uppercase">Chairman Name</label>
+                           <input type="text" placeholder="e.g. Prof. Kamrul Islam" value={section.data.name || ''} onChange={e=>handleLocalUpdate(sectionIdStr, {data: {...section.data, name: e.target.value}})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-sm dark:text-white" />
+                        </div>
+                        <div className="space-y-1">
+                           <label className="text-[10px] font-bold text-gray-400 uppercase">Designation</label>
+                           <input type="text" placeholder="e.g. Chairman, BISE Dinajpur" value={section.data.designation || ''} onChange={e=>handleLocalUpdate(sectionIdStr, {data: {...section.data, designation: e.target.value}})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-sm dark:text-white" />
+                        </div>
+                        <div className="md:col-span-2">
+                          <UploaderField label="Profile Image" value={section.data.image} sectionId={sectionIdStr} dataKey="image" accept="image/*" />
+                        </div>
+                        <div className="md:col-span-2 space-y-1">
+                          <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><MessageSquareText size={12}/> Short Sidebar Quote</label>
+                          <textarea 
+                             placeholder="Short message for the sidebar widget..." 
+                             value={section.data.quote || ''} 
+                             onChange={e=>handleLocalUpdate(sectionIdStr, {data: {...section.data, quote: e.target.value}})} 
+                             className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-sm dark:text-white h-20 resize-none"
+                          />
+                        </div>
+                      </div>
+                      
+                      <div className="pt-4 border-t dark:border-gray-700">
+                        <label className="text-[10px] font-bold text-emerald-600 uppercase flex items-center gap-1 mb-2"><FileEdit size={12}/> Chairman's Detailed Message (Full Page Content)</label>
+                        <div className="prose prose-sm max-w-none">
+                          <CKEditor
+                            editor={ClassicEditor}
+                            data={section.data.content || ''}
+                            onChange={(_, editor) => {
+                              const data = editor.getData();
+                              handleLocalUpdate(sectionIdStr, { data: { ...section.data, content: data } });
+                            }}
+                            config={{
+                              licenseKey: 'GPL',
+                              placeholder: 'Type the full detailed message here. This appears on the "Read More" page...',
+                              toolbar: [
+                                'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'insertTable', 'undo', 'redo'
+                              ]
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   )}

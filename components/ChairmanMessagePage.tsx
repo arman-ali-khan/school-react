@@ -47,10 +47,6 @@ const ChairmanMessagePage: React.FC<ChairmanMessagePageProps> = ({ onBack }) => 
                         I seek the cooperation of all stakeholders—teachers, parents, and students—to maintain a fair and conducive academic atmosphere. Let us work together to build a prosperous and educated nation.
                     </p>
                     
-                    <p className="mt-8 font-bold text-emerald-800 dark:text-emerald-400">
-                        Joy Bangla.<br/>
-                        Long live Bangladesh.
-                    </p>
                 </div>
             </div>
         </div>
