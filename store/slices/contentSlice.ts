@@ -1,7 +1,7 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { supabase } from '../../supabaseClient';
-import { Notice, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, TopBarConfig, FooterConfig, HomeWidgetConfig, NewsItem } from '../../types';
+import { supabase } from '../../services/supabase';
+import { Notice, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, TopBarConfig, FooterConfig, HomeWidgetConfig, NewsItem, SchoolInfo, SEOMeta } from '../../types';
 import { NOTICES, NEWS_ITEMS, INITIAL_PAGES, CAROUSEL_ITEMS, SIDEBAR_SECTIONS, INFO_CARDS, MAIN_MENU, DEFAULT_TOPBAR_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HOME_WIDGETS } from '../../constants';
 
 interface ContentState {
@@ -15,6 +15,8 @@ interface ContentState {
   topBarConfig: TopBarConfig;
   footerConfig: FooterConfig;
   homeWidgets: HomeWidgetConfig[];
+  schoolInfo: SchoolInfo;
+  seoMeta: SEOMeta;
   isLoading: boolean;
   error: string | null;
 }
@@ -30,6 +32,21 @@ const initialState: ContentState = {
   topBarConfig: DEFAULT_TOPBAR_CONFIG,
   footerConfig: DEFAULT_FOOTER_CONFIG,
   homeWidgets: DEFAULT_HOME_WIDGETS,
+  schoolInfo: {
+    name: "Board of Intermediate and Secondary Education",
+    title: "Dinajpur",
+    logoUrl: "",
+    address: "Upashahar, Dinajpur",
+    hotline: "16221",
+    eiin: "123456",
+    code: "789"
+  },
+  seoMeta: {
+    title: "Dinajpur Education Board Portal",
+    description: "Official portal for Dinajpur Education Board",
+    keywords: "education, board, dinajpur, results, notices",
+    author: "BISE Engineering"
+  },
   isLoading: true,
   error: null,
 };
@@ -42,68 +59,90 @@ export const fetchAllContent = createAsyncThunk('content/fetchAll', async () => 
     supabase.from('carousel_items').select('*').order('id'),
     supabase.from('home_widgets').select('*').order('id'),
     supabase.from('sidebar_sections').select('*').order('order_index', { ascending: true }),
+    supabase.from('info_cards').select('*').order('order_index', { ascending: true }),
     supabase.from('settings').select('value').eq('key', 'topBarConfig'),
-    supabase.from('settings').select('value').eq('key', 'footerConfig')
+    supabase.from('settings').select('value').eq('key', 'footerConfig'),
+    supabase.from('settings').select('value').eq('key', 'schoolInfo'),
+    supabase.from('settings').select('value').eq('key', 'seoMeta'),
+    supabase.from('settings').select('value').eq('key', 'menuItems'),
+    supabase.from('settings').select('value').eq('key', 'carouselItems'),
   ]);
 
-  const data: Partial<ContentState> = {};
+  const data: any = {};
   if (results[0].status === 'fulfilled' && results[0].value.data?.length) data.notices = results[0].value.data;
   if (results[1].status === 'fulfilled' && results[1].value.data?.length) data.news = results[1].value.data;
   if (results[2].status === 'fulfilled' && results[2].value.data?.length) data.pages = results[2].value.data;
   if (results[3].status === 'fulfilled' && results[3].value.data?.length) data.carouselItems = results[3].value.data;
   if (results[4].status === 'fulfilled' && results[4].value.data?.length) data.homeWidgets = results[4].value.data;
   if (results[5].status === 'fulfilled' && results[5].value.data?.length) data.sidebarSections = results[5].value.data;
-  if (results[6].status === 'fulfilled' && results[6].value.data?.length) data.topBarConfig = results[6].value.data[0]?.value || DEFAULT_TOPBAR_CONFIG;
-  if (results[7].status === 'fulfilled' && results[7].value.data?.length) data.footerConfig = results[7].value.data[0]?.value || DEFAULT_FOOTER_CONFIG;
+  if (results[6].status === 'fulfilled' && results[6].value.data?.length) {
+    data.infoCards = results[6].value.data.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        iconName: item.icon_name,
+        imageUrl: item.image_url,
+        links: item.links
+    }));
+  }
+  if (results[7].status === 'fulfilled' && results[7].value.data?.length) data.topBarConfig = results[7].value.data[0]?.value;
+  if (results[8].status === 'fulfilled' && results[8].value.data?.length) data.footerConfig = results[8].value.data[0]?.value;
+  if (results[9].status === 'fulfilled' && results[9].value.data?.length) data.schoolInfo = results[9].value.data[0]?.value;
+  if (results[10].status === 'fulfilled' && results[10].value.data?.length) data.seoMeta = results[10].value.data[0]?.value;
+  if (results[11].status === 'fulfilled' && results[11].value.data?.length) data.menuItems = results[11].value.data[0]?.value;
+  if (results[12].status === 'fulfilled' && results[12].value.data?.length) data.carouselItems = results[12].value.data[0]?.value;
 
   return data;
 });
 
-export const addNoticeThunk = createAsyncThunk('content/addNotice', async (notice: Notice, { rejectWithValue }) => {
+// Thunks for various updates
+export const addNoticeThunk = createAsyncThunk('content/addNotice', async (notice: Notice) => {
   const { id, ...payload } = notice;
   const { data, error } = await supabase.from('notices').insert([payload]).select().single();
-  if (error) return rejectWithValue(error.message);
+  if (error) throw error;
   return data as Notice;
 });
 
-export const addNewsThunk = createAsyncThunk('content/addNews', async (newsItem: NewsItem, { rejectWithValue }) => {
+export const addNewsThunk = createAsyncThunk('content/addNews', async (newsItem: NewsItem) => {
   const { id, ...payload } = newsItem;
   const { data, error } = await supabase.from('news_items').insert([payload]).select().single();
-  if (error) return rejectWithValue(error.message);
+  if (error) throw error;
   return data as NewsItem;
 });
 
-export const addPageThunk = createAsyncThunk('content/addPage', async (page: Page, { rejectWithValue }) => {
+export const addPageThunk = createAsyncThunk('content/addPage', async (page: Page) => {
   const { id, ...payload } = page;
   const { data, error } = await supabase.from('pages').insert([payload]).select().single();
-  if (error) return rejectWithValue(error.message);
+  if (error) throw error;
   return data as Page;
 });
 
-export const updatePageThunk = createAsyncThunk('content/updatePage', async (page: Page, { rejectWithValue }) => {
-  const { id, created_at, ...payload } = page as any;
+export const updatePageThunk = createAsyncThunk('content/updatePage', async (page: Page) => {
+  const { id, ...payload } = page;
   const { data, error } = await supabase.from('pages').update(payload).eq('id', id).select().single();
-  if (error) return rejectWithValue(error.message);
+  if (error) throw error;
   return data as Page;
+});
+
+export const updateSettingsThunk = createAsyncThunk('content/updateSettings', async ({ key, value }: { key: string, value: any }) => {
+  const { error } = await supabase.from('settings').upsert({ key, value });
+  if (error) throw error;
+  return { key, value };
 });
 
 export const updateSidebarThunk = createAsyncThunk('content/updateSidebar', async (sections: SidebarSection[]) => {
-    // To maintain synchronization, we delete existing and re-insert with correct order_index
-    // Note: In production, a more granular update/reorder logic is preferred, but for 
-    // widget management, full-sync is standard.
-    const { error: deleteError } = await supabase.from('sidebar_sections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    if (deleteError) throw deleteError;
-
-    const payload = sections.map((s, index) => ({
-        title: s.title,
-        type: s.type,
-        data: s.data,
-        order_index: index
-    }));
-
-    const { data, error: insertError } = await supabase.from('sidebar_sections').insert(payload).select();
-    if (insertError) throw insertError;
+    await supabase.from('sidebar_sections').delete().neq('id', '0');
+    const payload = sections.map((s, index) => ({ title: s.title, type: s.type, data: s.data, order_index: index }));
+    const { data, error } = await supabase.from('sidebar_sections').insert(payload).select();
+    if (error) throw error;
     return data as SidebarSection[];
+});
+
+export const updateInfoCardsThunk = createAsyncThunk('content/updateInfoCards', async (cards: InfoCard[]) => {
+    await supabase.from('info_cards').delete().neq('id', '0');
+    const payload = cards.map((c, index) => ({ title: c.title, icon_name: c.iconName, image_url: c.imageUrl, links: c.links, order_index: index }));
+    const { data, error } = await supabase.from('info_cards').insert(payload).select();
+    if (error) throw error;
+    return data.map((item: any) => ({ id: item.id, title: item.title, iconName: item.icon_name, imageUrl: item.image_url, links: item.links })) as InfoCard[];
 });
 
 export const updateHomeWidgetsThunk = createAsyncThunk('content/updateHomeWidgets', async (widgets: HomeWidgetConfig[]) => {
@@ -114,37 +153,32 @@ export const updateHomeWidgetsThunk = createAsyncThunk('content/updateHomeWidget
 });
 
 export const deleteNoticeThunk = createAsyncThunk('content/deleteNotice', async (id: string) => {
-  const { error } = await supabase.from('notices').delete().eq('id', id);
-  if (error) throw error;
+  await supabase.from('notices').delete().eq('id', id);
   return id;
 });
 
 export const deleteNewsThunk = createAsyncThunk('content/deleteNews', async (id: string) => {
-  const { error } = await supabase.from('news_items').delete().eq('id', id);
-  if (error) throw error;
+  await supabase.from('news_items').delete().eq('id', id);
   return id;
 });
 
 export const deletePageThunk = createAsyncThunk('content/deletePage', async (id: string) => {
-  const { error } = await supabase.from('pages').delete().eq('id', id);
-  if (error) throw error;
+  await supabase.from('pages').delete().eq('id', id);
   return id;
 });
 
-export const updateSettingsThunk = createAsyncThunk('content/updateSettings', async ({ key, value }: { key: string, value: any }) => {
-  const { error } = await supabase.from('settings').upsert({ key, value });
-  if (error) throw error;
-  return { key, value };
-});
-   
 const contentSlice = createSlice({
   name: 'content',
   initialState,
   reducers: {
-    setMenuItems: (state, action: PayloadAction<MenuItem[]>) => { state.menuItems = action.payload; },
-    setInfoCards: (state, action: PayloadAction<InfoCard[]>) => { state.infoCards = action.payload; },
-    setSidebarSections: (state, action: PayloadAction<SidebarSection[]>) => { state.sidebarSections = action.payload; },
-    setHomeWidgets: (state, action: PayloadAction<HomeWidgetConfig[]>) => { state.homeWidgets = action.payload; },
+    // Reducer to update menu items manually if needed
+    setMenuItems: (state, action: PayloadAction<MenuItem[]>) => {
+      state.menuItems = action.payload;
+    },
+    // Reducer to update info cards manually if needed
+    setInfoCards: (state, action: PayloadAction<InfoCard[]>) => {
+      state.infoCards = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -153,43 +187,26 @@ const contentSlice = createSlice({
         Object.assign(state, action.payload);
         state.isLoading = false;
       })
-      .addCase(fetchAllContent.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.error.message || 'Failed to fetch content';
-      })
-      .addCase(addNoticeThunk.fulfilled, (state, action) => {
-        state.notices.unshift(action.payload);
-      })
-      .addCase(addNewsThunk.fulfilled, (state, action) => {
-        state.news.unshift(action.payload);
-      })
-      .addCase(addPageThunk.fulfilled, (state, action) => {
-        state.pages.unshift(action.payload);
-      })
-      .addCase(updatePageThunk.fulfilled, (state, action) => {
-        state.pages = state.pages.map(p => p.id === action.payload.id ? action.payload : p);
-      })
-      .addCase(updateSidebarThunk.fulfilled, (state, action) => {
-        state.sidebarSections = action.payload;
-      })
-      .addCase(updateHomeWidgetsThunk.fulfilled, (state, action) => {
-        state.homeWidgets = action.payload;
-      })
-      .addCase(deleteNoticeThunk.fulfilled, (state, action) => {
-        state.notices = state.notices.filter(n => n.id !== action.payload);
-      })
-      .addCase(deleteNewsThunk.fulfilled, (state, action) => {
-        state.news = state.news.filter(n => n.id !== action.payload);
-      })
-      .addCase(deletePageThunk.fulfilled, (state, action) => {
-        state.pages = state.pages.filter(p => p.id !== action.payload);
-      })
+      .addCase(addNoticeThunk.fulfilled, (state, action) => { state.notices.unshift(action.payload); })
+      .addCase(addNewsThunk.fulfilled, (state, action) => { state.news.unshift(action.payload); })
+      .addCase(addPageThunk.fulfilled, (state, action) => { state.pages.unshift(action.payload); })
+      .addCase(updatePageThunk.fulfilled, (state, action) => { state.pages = state.pages.map(p => p.id === action.payload.id ? action.payload : p); })
+      .addCase(updateSidebarThunk.fulfilled, (state, action) => { state.sidebarSections = action.payload; })
+      .addCase(updateInfoCardsThunk.fulfilled, (state, action) => { state.infoCards = action.payload; })
+      .addCase(updateHomeWidgetsThunk.fulfilled, (state, action) => { state.homeWidgets = action.payload; })
+      .addCase(deleteNoticeThunk.fulfilled, (state, action) => { state.notices = state.notices.filter(n => n.id !== action.payload); })
+      .addCase(deleteNewsThunk.fulfilled, (state, action) => { state.news = state.news.filter(n => n.id !== action.payload); })
+      .addCase(deletePageThunk.fulfilled, (state, action) => { state.pages = state.pages.filter(p => p.id !== action.payload); })
       .addCase(updateSettingsThunk.fulfilled, (state, action) => {
         if (action.payload.key === 'topBarConfig') state.topBarConfig = action.payload.value;
         if (action.payload.key === 'footerConfig') state.footerConfig = action.payload.value;
+        if (action.payload.key === 'schoolInfo') state.schoolInfo = action.payload.value;
+        if (action.payload.key === 'seoMeta') state.seoMeta = action.payload.value;
+        if (action.payload.key === 'menuItems') state.menuItems = action.payload.value;
+        if (action.payload.key === 'carouselItems') state.carouselItems = action.payload.value;
       });
   },
 });
 
-export const { setMenuItems, setInfoCards, setSidebarSections, setHomeWidgets } = contentSlice.actions;
+export const { setMenuItems, setInfoCards } = contentSlice.actions;
 export default contentSlice.reducer;

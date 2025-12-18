@@ -15,6 +15,7 @@ import {
   deleteNewsThunk, 
   updateSettingsThunk, 
   updateSidebarThunk,
+  updateInfoCardsThunk,
   updateHomeWidgetsThunk,
   setMenuItems, 
   setInfoCards 
@@ -149,27 +150,9 @@ const App: React.FC = () => {
         return page ? <DynamicPage page={page} onBack={() => navigate('home')} /> : <NotFound />;
       case 'admin-dashboard':
         if (user?.role !== 'Admin') return <AccessDenied />;
+        // FIX: Remove unnecessary props as AdminDashboard uses Redux internal state and only requires onBack prop.
         return (
           <AdminDashboard 
-            user={user} notices={notices} news={news} pages={pages} 
-            carouselItems={carouselItems} sidebarSections={sidebarSections} 
-            infoCards={infoCards} menuItems={menuItems} 
-            topBarConfig={topBarConfig} footerConfig={footerConfig} homeWidgets={homeWidgets}
-            onAddNotice={(n) => dispatch(addNoticeThunk(n)).unwrap()}
-            onAddNews={(n) => dispatch(addNewsThunk(n)).unwrap()}
-            onAddPage={(p) => dispatch(addPageThunk(p)).unwrap()}
-            onUpdatePage={(p) => dispatch(updatePageThunk(p)).unwrap()}
-            onDeletePage={(id) => dispatch(deletePageThunk(id))}
-            onDeleteNotice={(id) => dispatch(deleteNoticeThunk(id))}
-            onDeleteNews={(id) => dispatch(deleteNewsThunk(id))}
-            onUpdatePages={items => {}}
-            onUpdateCarousel={items => {}}
-            onUpdateSidebar={items => dispatch(updateSidebarThunk(items))}
-            onUpdateInfoCards={items => dispatch(setInfoCards(items))}
-            onUpdateMenu={items => dispatch(setMenuItems(items))}
-            onUpdateTopBar={c => dispatch(updateSettingsThunk({ key: 'topBarConfig', value: c }))}
-            onUpdateFooter={c => dispatch(updateSettingsThunk({ key: 'footerConfig', value: c }))}
-            onUpdateHomeWidgets={items => dispatch(updateHomeWidgetsThunk(items))}
             onBack={() => navigate('home')}
           />
         );

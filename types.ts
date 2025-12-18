@@ -1,10 +1,6 @@
 
 import React from 'react';
 
-/**
- * CORE INTERFACES
- */
-
 export interface Notice {
   id: string;
   title: string;
@@ -34,10 +30,6 @@ export interface User {
   mobile?: string;
 }
 
-/**
- * CMS & LAYOUT INTERFACES
- */
-
 export interface Page {
   id: string;
   title: string;
@@ -59,7 +51,21 @@ export interface CarouselItem {
   caption: string;
 }
 
-// Expanded SidebarSectionType
+// Added SidebarLink interface for navigation items in sidebar
+export interface SidebarLink {
+  label: string;
+  href: string;
+  isExternal?: boolean;
+  iconName?: string;
+  badge?: string;
+}
+
+// Added SidebarHotline interface for contact items in sidebar
+export interface SidebarHotline {
+  title: string;
+  number: string;
+}
+
 export type SidebarSectionType = 
   | 'message' 
   | 'image_card' 
@@ -80,24 +86,6 @@ export interface SidebarSection {
   data: any; 
 }
 
-export interface SidebarLink {
-  label: string;
-  href: string;
-  isExternal?: boolean;
-  badge?: string;
-  iconName?: string; // Optional icon for the link
-}
-
-export interface SidebarHotline {
-  title: string;
-  number: string;
-}
-
-export interface QuickLink {
-  text: string;
-  href: string;
-}
-
 export interface TopBarConfig {
   phone: string;
   email: string;
@@ -113,6 +101,23 @@ export interface FooterConfig {
   copyrightText: string;
 }
 
+export interface SchoolInfo {
+  name: string;
+  title: string;
+  logoUrl: string;
+  address: string;
+  hotline: string;
+  eiin: string;
+  code: string;
+}
+
+export interface SEOMeta {
+  title: string;
+  description: string;
+  keywords: string;
+  author: string;
+}
+
 export type HomeWidgetType = 'youtube' | 'map' | 'image' | 'video';
 
 export interface HomeWidgetConfig {
@@ -126,6 +131,7 @@ export interface InfoCard {
   id: string;
   title: string;
   iconName: string;
+  imageUrl?: string;
   links: { text: string; href: string }[];
 }
 

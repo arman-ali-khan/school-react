@@ -49,7 +49,33 @@ export interface CarouselItem {
   caption: string;
 }
 
-export type SidebarSectionType = 'message' | 'image_card' | 'audio' | 'list' | 'hotlines';
+// Added SidebarLink interface for navigation items in sidebar
+export interface SidebarLink {
+  label: string;
+  href: string;
+  isExternal?: boolean;
+  iconName?: string;
+  badge?: string;
+}
+
+// Added SidebarHotline interface for contact items in sidebar
+export interface SidebarHotline {
+  title: string;
+  number: string;
+}
+
+export type SidebarSectionType = 
+  | 'message' 
+  | 'image_card' 
+  | 'audio' 
+  | 'list' 
+  | 'hotlines' 
+  | 'map' 
+  | 'video' 
+  | 'image_only'
+  | 'countdown'
+  | 'datetime'
+  | 'notice';
 
 export interface SidebarSection {
   id: string;
@@ -77,6 +103,7 @@ export interface InfoCard {
   id: string;
   title: string;
   iconName: string;
+  imageUrl?: string;
   links: { text: string; href: string }[];
 }
 
