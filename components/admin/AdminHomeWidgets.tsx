@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Plus, Trash2, Video, MapPin, Image as ImageIcon, 
-  Save, RefreshCw, PlusCircle, AlertCircle, FileCheck,
-  Type, Bold, Heading1, List
+  Save, RefreshCw, PlusCircle, AlertCircle, FileCheck 
 } from 'lucide-react';
 import { HomeWidgetConfig, HomeWidgetType } from '../../types';
 
@@ -30,8 +29,7 @@ const AdminHomeWidgets: React.FC<AdminHomeWidgetsProps> = ({ widgets, onUpdate, 
       id: generateUUID(), 
       title: 'New Content Widget', 
       type: 'youtube', 
-      url: '',
-      content: ''
+      url: '' 
     };
     setLocalWidgets([...localWidgets, newWidget]);
     setHasUnsavedChanges(true);
@@ -64,34 +62,6 @@ const AdminHomeWidgets: React.FC<AdminHomeWidgetsProps> = ({ widgets, onUpdate, 
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const insertTag = (id: string, tag: string, closeTag?: string) => {
-    const widget = localWidgets.find(w => w.id === id);
-    if (!widget) return;
-
-    const currentContent = widget.content || '';
-    const el = document.getElementById(`editor-${id}`) as HTMLTextAreaElement;
-    if (!el) return;
-
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const before = currentContent.substring(0, start);
-    const middle = currentContent.substring(start, end);
-    const after = currentContent.substring(end);
-    
-    const newContent = closeTag 
-        ? `${before}<${tag}>${middle}</${closeTag}>${after}` 
-        : `${before}<${tag}>${middle}${after}`;
-    
-    handleLocalUpdate(id, { content: newContent });
-    
-    // Maintain focus and update selection (simple approach)
-    setTimeout(() => {
-        el.focus();
-        const offset = tag.length + 2;
-        el.setSelectionRange(start + offset, end + offset);
-    }, 10);
   };
 
   return (
@@ -144,7 +114,6 @@ const AdminHomeWidgets: React.FC<AdminHomeWidgetsProps> = ({ widgets, onUpdate, 
                     {w.type === 'youtube' && <Video size={14} className="text-red-500" />}
                     {w.type === 'map' && <MapPin size={14} className="text-blue-500" />}
                     {w.type === 'image' && <ImageIcon size={14} className="text-emerald-500" />}
-                    {w.type === 'html' && <Type size={14} className="text-purple-500" />}
                  </div>
                  <button 
                   onClick={() => handleLocalDelete(w.id)} 
@@ -175,41 +144,18 @@ const AdminHomeWidgets: React.FC<AdminHomeWidgetsProps> = ({ widgets, onUpdate, 
                     <option value="map">Google Map Location</option>
                     <option value="image">Static Banner Image</option>
                     <option value="video">Direct Video URL</option>
-                    <option value="html">Rich HTML Content</option>
                   </select>
                 </div>
-
-                {w.type === 'html' ? (
-                  <div className="md:col-span-2 space-y-2">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Rich Content / HTML Block</label>
-                    <div className="border rounded-xl overflow-hidden dark:border-gray-600 shadow-inner">
-                        <div className="bg-gray-50 dark:bg-gray-700 p-2 border-b dark:border-gray-600 flex gap-2">
-                            <button type="button" onClick={() => insertTag(w.id, 'h3', 'h3')} className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-300" title="Headline"><Heading1 size={14}/></button>
-                            <button type="button" onClick={() => insertTag(w.id, 'b', 'b')} className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-300" title="Bold"><Bold size={14}/></button>
-                            <button type="button" onClick={() => insertTag(w.id, 'li', 'li')} className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-300" title="List Item"><List size={14}/></button>
-                            <button type="button" onClick={() => insertTag(w.id, 'p', 'p')} className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded text-gray-500 dark:text-gray-300" title="Paragraph"><Type size={14}/></button>
-                        </div>
-                        <textarea 
-                          id={`editor-${w.id}`}
-                          value={w.content || ''} 
-                          onChange={e => handleLocalUpdate(w.id, {content: e.target.value})} 
-                          className="w-full h-48 p-4 text-sm dark:bg-gray-800 dark:text-white font-mono focus:outline-none resize-y" 
-                          placeholder="<p>Enter your content here...</p>" 
-                        />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="md:col-span-2 space-y-1">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase">Resource URL (Embed or Direct Link)</label>
-                    <input 
-                      type="text" 
-                      value={w.url} 
-                      onChange={e => handleLocalUpdate(w.id, {url: e.target.value})} 
-                      className="w-full p-2.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500 outline-none" 
-                      placeholder="https://..." 
-                    />
-                  </div>
-                )}
+                <div className="md:col-span-2 space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase">Resource URL (Embed or Direct Link)</label>
+                  <input 
+                    type="text" 
+                    value={w.url} 
+                    onChange={e => handleLocalUpdate(w.id, {url: e.target.value})} 
+                    className="w-full p-2.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500 outline-none" 
+                    placeholder="https://..." 
+                  />
+                </div>
               </div>
             </div>
           );
