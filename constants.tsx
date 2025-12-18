@@ -3,70 +3,20 @@ import { MenuItem, Notice, CarouselItem, SidebarSection, InfoCard, Page, TopBarC
 import React from 'react';
 
 export const MAIN_MENU: MenuItem[] = [
-  { id: '1', label: 'Home', href: 'home' },
-  { id: '2', label: 'About Us', href: '#', children: [{ id: '2-1', label: 'History', href: 'page:about-us' }, { id: '2-2', label: 'Mission & Vision', href: '#' }, { id: '2-3', label: 'Organogram', href: '#' }] },
-  { id: '3', label: 'Administration', href: '#', children: [{ id: '3-1', label: 'Chairman', href: 'chairman' }, { id: '3-2', label: 'Officers', href: '#' }, { id: '3-3', label: 'Staff', href: '#' }] },
-  { id: '4', label: 'Institute', href: '#', children: [{ id: '4-1', label: 'School List', href: '#' }, { id: '4-2', label: 'College List', href: '#' }] },
-  { id: '5', label: 'Results', href: '#', children: [{ id: '5-1', label: 'SSC Result', href: '#' }, { id: '5-2', label: 'HSC Result', href: '#' }, { id: '5-3', label: 'JSC Result', href: '#' }] },
-  { id: '6', label: 'Archive', href: '#' },
-  { id: '7', label: 'Contact', href: '#' },
+  { id: '1', label: 'Home', href: 'home' }
 ];
 
-export const NOTICES: Notice[] = [
-  { id: '1', title: 'HSC Examination 2024 Routine (Revised)', date: '2024-05-10', type: 'exam', link: '#' },
-  { id: '2', title: 'Urgent Notice regarding Form Fill-up for SSC 2025', date: '2024-05-08', type: 'student', link: '#' },
-  { id: '3', title: 'Monthly Pay Order (MPO) Notice for May 2024', date: '2024-05-05', type: 'college', link: '#' },
-  { id: '4', title: 'Application for Name Correction (JSC/SSC)', date: '2024-05-01', type: 'general', link: '#' },
-];
+export const NOTICES: Notice[] = [];
 
-export const NEWS_ITEMS: NewsItem[] = [
-  { id: 'n1', title: "নাম ও বয়স সংশোধন ফি বর্ধিতকরণ (২০২৫)", date: '2024-05-15', content: "ফি বর্ধিতকরণ সংক্রান্ত বিস্তারিত তথ্য..." },
-  { id: 'n2', title: "২০২৪ সালের এইচএসসি পরীক্ষার ফল পুনঃনিরীক্ষণ", date: '2024-05-14', content: "ফলাফল পুনঃনিরীক্ষণ পদ্ধতি..." },
-];
+export const NEWS_ITEMS: NewsItem[] = [];
 
-export const CAROUSEL_ITEMS: CarouselItem[] = [
-  { id: '1', image: 'https://picsum.photos/800/400?random=1', caption: "Main Administrative Building of Dinajpur Education Board" },
-  { id: '2', image: 'https://picsum.photos/800/400?random=2', caption: "Annual Sports Day Celebration 2024" },
-  { id: '3', image: 'https://picsum.photos/800/400?random=3', caption: "HSC Result Publication Ceremony with Honorable Chairman" }
-];
+export const CAROUSEL_ITEMS: CarouselItem[] = [];
 
-export const SIDEBAR_SECTIONS: SidebarSection[] = [
-    {
-        id: '1',
-        type: 'message',
-        title: "Chairman's Message",
-        data: {
-            name: "Prof. Md. Kamrul Islam",
-            designation: "Chairman, BISE Dinajpur",
-            image: "https://picsum.photos/200/200?random=10",
-            quote: "We are committed to ensuring quality education and transparent examination systems for all students in the Rangpur division."
-        }
-    }
-];
+export const SIDEBAR_SECTIONS: SidebarSection[] = [];
 
-export const INFO_CARDS: InfoCard[] = [
-    {
-        id: '1',
-        title: 'স্বাধীনতার সুবর্ণজয়ন্তী',
-        iconName: 'image-jubilee',
-        links: [
-            { text: 'আদেশ/নোটিশ', href: '#' },
-            { text: 'কার্যক্রম', href: '#' },
-            { text: 'ছবি গ্যালারি', href: '#' },
-            { text: 'ভিডিও', href: '#' }
-        ]
-    }
-];
+export const INFO_CARDS: InfoCard[] = [];
 
-export const INITIAL_PAGES: Page[] = [
-    {
-        id: '1',
-        title: 'About Us',
-        slug: 'about-us',
-        date: '2024-05-15',
-        content: `<h3>Our History</h3><p>The Board of Intermediate and Secondary Education, Dinajpur was established to oversee and manage the educational standards of the Rangpur division. It ensures fair examinations and quality assessment processes for millions of students across northern Bangladesh.</p>`
-    }
-];
+export const INITIAL_PAGES: Page[] = [];
 
 export const DEFAULT_TOPBAR_CONFIG: TopBarConfig = {
     phone: "+880-531-65552",
@@ -86,17 +36,4 @@ export const DEFAULT_FOOTER_CONFIG: FooterConfig = {
     copyrightText: "© 2024 Board of Intermediate and Secondary Education, Dinajpur. All rights reserved."
 };
 
-export const DEFAULT_HOME_WIDGETS: HomeWidgetConfig[] = [
-    {
-        id: '1',
-        title: "ভিডিও বার্তা (Video Message)",
-        type: 'youtube',
-        url: "https://www.youtube.com/embed/zQDAi8tI-cU"
-    },
-    {
-        id: '2',
-        title: "অবস্থান মানচিত্র (Map)",
-        type: 'map',
-        url: "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14392.296538356165!2d88.6331948!3d25.6015569!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39fb5290a7895083%3A0x6a0c007133346914!2sEducation%20Board%2C%20Dinajpur!5e0!3m2!1sen!2sbd!4v1715800000000!5m2!1sen!2sbd"
-    }
-];
+export const DEFAULT_HOME_WIDGETS: HomeWidgetConfig[] = [];

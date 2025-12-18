@@ -1,13 +1,13 @@
 
 import React, { useState, useRef } from 'react';
-import { Trash2, Save, RefreshCw, Plus, Upload, FileCheck, X, FileText as FileIcon } from 'lucide-react';
+import { Trash2, Save, RefreshCw, Plus, Upload, ImageIcon, X, Newspaper } from 'lucide-react';
 import { CKEditor } from '@ckeditor/ckeditor5-react';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
-import { Notice } from '../../types';
+import { NewsItem } from '../../types';
 
-interface AdminNoticesProps {
-  notices: Notice[];
-  onAdd: (notice: Notice) => Promise<any>;
+interface AdminNewsProps {
+  news: NewsItem[];
+  onAdd: (newsItem: NewsItem) => Promise<any>;
   onDelete: (id: string) => Promise<any> | void;
   generateUUID: () => string;
 }
@@ -15,11 +15,10 @@ interface AdminNoticesProps {
 const CLOUDINARY_UPLOAD_PRESET = "school"; 
 const CLOUDINARY_CLOUD_NAME = "dgituybrt";
 
-const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, generateUUID }) => {
+const AdminNews: React.FC<AdminNewsProps> = ({ news, onAdd, onDelete, generateUUID }) => {
   const [title, setTitle] = useState('');
-  const [type, setType] = useState<'general' | 'student' | 'college' | 'exam'>('general');
   const [content, setContent] = useState('');
-  const [fileUrl, setFileUrl] = useState('');
+  const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -41,13 +40,13 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
       });
       const data = await response.json();
       if (data.secure_url) {
-        setFileUrl(data.secure_url);
+        setThumbnailUrl(data.secure_url);
       } else {
         throw new Error(data.error?.message || 'Upload failed');
       }
     } catch (err) {
       console.error(err);
-      alert('File upload failed. Please try again.');
+      alert('Thumbnail upload failed.');
     } finally {
       setIsUploading(false);
     }
@@ -62,23 +61,21 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
       await onAdd({
         id: generateUUID(),
         title,
-        date: new Date().toISOString().split('T')[0],
-        type,
-        link: fileUrl || '#',
         content,
-        file_url: fileUrl || undefined,
+        thumbnail_url: thumbnailUrl || undefined,
+        date: new Date().toISOString().split('T')[0],
       });
       setTitle(''); 
       setContent('');
-      setFileUrl('');
+      setThumbnailUrl('');
       if (fileInputRef.current) fileInputRef.current.value = '';
     } finally { 
       setIsPublishing(false); 
     }
   };
 
-  const handleDeleteNotice = async (id: string) => {
-    if (window.confirm('Delete this notice?')) {
+  const handleDeleteNews = async (id: string) => {
+    if (window.confirm('Delete this news item?')) {
       setDeletingId(id);
       try {
         await onDelete(id);
@@ -92,39 +89,24 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
     <div className="space-y-6 animate-in fade-in duration-500">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border dark:border-gray-700 shadow-sm">
         <h3 className="font-bold mb-4 flex items-center gap-2 text-emerald-800 dark:text-emerald-400">
-          <Plus size={18}/> Publish New Notice
+          <Plus size={18}/> Create New News Item
         </h3>
         <form onSubmit={handleSubmit} className="space-y-5">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="md:col-span-3">
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Notice Title</label>
-              <input 
-                type="text" 
-                value={title} 
-                onChange={e=>setTitle(e.target.value)} 
-                className="w-full p-2.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none" 
-                placeholder="e.g., HSC Examination 2025 Revised Schedule" 
-                required 
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Category</label>
-              <select 
-                value={type} 
-                onChange={e=>setType(e.target.value as any)} 
-                className="w-full p-2.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none"
-              >
-                <option value="general">General</option>
-                <option value="student">Student</option>
-                <option value="college">College</option>
-                <option value="exam">Exam</option>
-              </select>
-            </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Headline</label>
+            <input 
+              type="text" 
+              value={title} 
+              onChange={e=>setTitle(e.target.value)} 
+              className="w-full p-2.5 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:ring-2 focus:ring-emerald-500 outline-none" 
+              placeholder="e.g., Board Chairman announces new scholarship program" 
+              required 
+            />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-gray-400 uppercase">Text Content (Optional)</label>
+              <label className="block text-xs font-bold text-gray-400 uppercase">News Content</label>
               <div className="prose prose-sm max-w-none">
                 <CKEditor
                   editor={ClassicEditor}
@@ -134,10 +116,10 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
                     setContent(data);
                   }}
                   config={{
-                    licenseKey: 'GPL', // Required for CKEditor 5 v42+
-                    placeholder: 'Type notice content here...',
+                    licenseKey: 'GPL',
+                    placeholder: 'Write the full news story here...',
                     toolbar: [
-                      'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'insertTable', 'undo', 'redo'
+                      'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'undo', 'redo'
                     ]
                   }}
                 />
@@ -145,11 +127,11 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
             </div>
 
             <div className="space-y-2">
-              <label className="block text-xs font-bold text-gray-400 uppercase">Attachment (Image or PDF)</label>
+              <label className="block text-xs font-bold text-gray-400 uppercase">Thumbnail Image (Optional)</label>
               <div 
-                onClick={() => !fileUrl && fileInputRef.current?.click()}
-                className={`h-[300px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer relative group ${
-                  fileUrl 
+                onClick={() => !thumbnailUrl && fileInputRef.current?.click()}
+                className={`h-[250px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer relative group ${
+                  thumbnailUrl 
                     ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/10' 
                     : 'border-gray-300 dark:border-gray-600 hover:border-emerald-400 hover:bg-gray-50 dark:hover:bg-gray-700/30'
                 }`}
@@ -157,20 +139,15 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
                 {isUploading ? (
                   <div className="flex flex-col items-center gap-2">
                     <RefreshCw className="animate-spin text-emerald-600" size={32} />
-                    <span className="text-xs font-bold text-emerald-600">Uploading to Cloudinary...</span>
+                    <span className="text-xs font-bold text-emerald-600">Uploading...</span>
                   </div>
-                ) : fileUrl ? (
-                  <div className="flex flex-col items-center gap-2 p-4 text-center">
-                    <div className="p-3 bg-emerald-100 dark:bg-emerald-800 rounded-full text-emerald-600 dark:text-emerald-300">
-                      <FileCheck size={32} />
-                    </div>
-                    <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 truncate max-w-[200px]">
-                      {fileUrl.split('/').pop()}
-                    </span>
+                ) : thumbnailUrl ? (
+                  <div className="w-full h-full p-2 flex flex-col items-center justify-center">
+                    <img src={thumbnailUrl} className="max-w-full max-h-full object-contain rounded-lg" alt="Thumbnail Preview" />
                     <button 
                       type="button"
-                      onClick={(e) => { e.stopPropagation(); setFileUrl(''); }}
-                      className="absolute top-2 right-2 p-1.5 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-lg hover:bg-red-200"
+                      onClick={(e) => { e.stopPropagation(); setThumbnailUrl(''); }}
+                      className="absolute top-2 right-2 p-1.5 bg-red-100 dark:bg-red-900/50 text-red-600 rounded-lg hover:bg-red-200"
                     >
                       <X size={14} />
                     </button>
@@ -178,8 +155,8 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
                 ) : (
                   <>
                     <Upload size={32} className="text-gray-400 group-hover:text-emerald-500 transition-colors mb-2" />
-                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Click to upload Document</span>
-                    <span className="text-[10px] text-gray-400 mt-1">Supports PDF, JPG, PNG</span>
+                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">Click to upload Photo</span>
+                    <span className="text-[10px] text-gray-400 mt-1">Recommended: 800x400 JPG/PNG</span>
                   </>
                 )}
                 <input 
@@ -187,7 +164,7 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
                   ref={fileInputRef} 
                   onChange={handleFileUpload} 
                   className="hidden" 
-                  accept=".pdf,image/*" 
+                  accept="image/*" 
                 />
               </div>
             </div>
@@ -196,11 +173,11 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
           <div className="pt-2">
             <button 
               type="submit" 
-              disabled={isPublishing || isUploading || !title.trim()} 
+              disabled={isPublishing || isUploading || !title.trim() || !content.trim()} 
               className="bg-emerald-700 hover:bg-emerald-800 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50 disabled:grayscale shadow-lg shadow-emerald-700/20"
             >
               {isPublishing ? <RefreshCw className="animate-spin" size={20}/> : <Save size={20}/>} 
-              Publish Notice
+              Publish News
             </button>
           </div>
         </form>
@@ -208,42 +185,41 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
 
       <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 overflow-hidden shadow-sm">
         <div className="bg-gray-50 dark:bg-gray-900/50 p-4 border-b dark:border-gray-700">
-          <h4 className="font-bold text-sm text-gray-500 uppercase tracking-widest">Recent Notices</h4>
+          <h4 className="font-bold text-sm text-gray-500 uppercase tracking-widest">Manage Recent News</h4>
         </div>
         <ul className="divide-y dark:divide-gray-700">
-          {notices.map(n => {
+          {news.map(n => {
             const isThisDeleting = deletingId === n.id;
             return (
               <li key={n.id} className={`p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 group transition-colors ${isThisDeleting ? 'opacity-50' : ''}`}>
                 <div className="flex gap-4 items-center">
-                  <div className={`p-2 rounded-lg ${
-                    n.type === 'exam' ? 'bg-red-50 text-red-600' :
-                    n.type === 'student' ? 'bg-blue-50 text-blue-600' :
-                    n.type === 'college' ? 'bg-purple-50 text-purple-600' :
-                    'bg-emerald-50 text-emerald-600'
-                  }`}>
-                    <FileIcon size={20} />
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center overflow-hidden bg-gray-100 dark:bg-gray-700 ${!n.thumbnail_url ? 'text-gray-400' : ''}`}>
+                    {n.thumbnail_url ? (
+                      <img src={n.thumbnail_url} className="w-full h-full object-cover" alt="" />
+                    ) : (
+                      <Newspaper size={20} />
+                    )}
                   </div>
                   <div>
                     <p className="font-bold text-sm dark:text-white group-hover:text-emerald-600 transition-colors">{n.title}</p>
                     <p className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase">
-                      {n.date} • {n.type} {n.file_url && <span className="ml-2 text-emerald-500 font-black tracking-tighter">[ATTACHMENT]</span>}
+                      {n.date}
                     </p>
                   </div>
                 </div>
                 <button 
-                  onClick={() => handleDeleteNotice(n.id)} 
+                  onClick={() => handleDeleteNews(n.id)} 
                   disabled={isThisDeleting}
                   className="text-gray-300 hover:text-red-500 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                  title="Delete Notice"
+                  title="Delete News"
                 >
                   {isThisDeleting ? <RefreshCw className="animate-spin" size={18} /> : <Trash2 size={18}/>}
                 </button>
               </li>
             );
           })}
-          {notices.length === 0 && (
-            <li className="p-10 text-center text-gray-400 italic text-sm">No notices published yet.</li>
+          {news.length === 0 && (
+            <li className="p-10 text-center text-gray-400 italic text-sm">No news published yet.</li>
           )}
         </ul>
       </div>
@@ -251,4 +227,4 @@ const AdminNotices: React.FC<AdminNoticesProps> = ({ notices, onAdd, onDelete, g
   );
 };
 
-export default AdminNotices;
+export default AdminNews;

@@ -18,6 +18,7 @@ import {
 
 import AdminOverview from '../components/admin/AdminOverview';
 import AdminNotices from '../components/admin/AdminNotices';
+import AdminNews from '../components/admin/AdminNews';
 import AdminPages from '../components/admin/AdminPages';
 import AdminCarousel from '../components/admin/AdminCarousel';
 import AdminNavbar from '../components/admin/AdminNavbar';
@@ -63,6 +64,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
             notices={notices} 
             onAdd={n => handleAction(() => dispatch(addNoticeThunk(n)).unwrap())} 
             onDelete={id => handleAction(() => dispatch(deleteNoticeThunk(id)).unwrap())} 
+            generateUUID={generateUUID} 
+          />
+        );
+      case 'news':
+        return (
+          <AdminNews 
+            news={news} 
+            onAdd={n => handleAction(() => dispatch(addNewsThunk(n)).unwrap())} 
+            onDelete={id => handleAction(() => dispatch(deleteNewsThunk(id)).unwrap())} 
             generateUUID={generateUUID} 
           />
         );
@@ -134,6 +144,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
                   {[
                       { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
                       { id: 'notices', icon: FileText, label: 'Notices' },
+                      { id: 'news', icon: Newspaper, label: 'News Ticker' },
                       { id: 'pages', icon: Files, label: 'Pages' },
                       { id: 'carousel', icon: Image, label: 'Banners' },
                       { id: 'menu', icon: Menu, label: 'Menu' },

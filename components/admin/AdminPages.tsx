@@ -1,6 +1,8 @@
 
-import React, { useState, useRef } from 'react';
-import { Plus, Edit, Trash2, Save, Heading1, Bold, List, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { Plus, Edit, Trash2, Save, RefreshCw } from 'lucide-react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import { Page } from '../../types';
 
 interface AdminPagesProps {
@@ -17,19 +19,24 @@ const AdminPages: React.FC<AdminPagesProps> = ({ pages, onAdd, onUpdate, onDelet
   const [slug, setSlug] = useState('');
   const [content, setContent] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!title.trim()) return;
-    const pageData: Page = {
-      id: editingPage?.id || generateUUID(),
-      title,
-      content,
-      slug: slug || title.toLowerCase().replace(/\s+/g, '-'),
-      date: new Date().toISOString()
-    };
-    if (editingPage) await onUpdate(pageData); else await onAdd(pageData);
-    reset();
+    if (!title.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      const pageData: Page = {
+        id: editingPage?.id || generateUUID(),
+        title,
+        content,
+        slug: slug || title.toLowerCase().replace(/\s+/g, '-'),
+        date: new Date().toISOString()
+      };
+      if (editingPage) await onUpdate(pageData); else await onAdd(pageData);
+      reset();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const reset = () => {
@@ -47,61 +54,117 @@ const AdminPages: React.FC<AdminPagesProps> = ({ pages, onAdd, onUpdate, onDelet
     }
   }
 
-  const insertTag = (tag: string, closeTag?: string) => {
-    const el = textareaRef.current;
-    if (!el) return;
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    const before = content.substring(0, start);
-    const middle = content.substring(start, end);
-    const after = content.substring(end);
-    const newContent = closeTag ? `${before}<${tag}>${middle}</${closeTag}>${after}` : `${before}<${tag}>${middle}${after}`;
-    setContent(newContent);
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border dark:border-gray-700 shadow-sm space-y-4">
         <h3 className="font-bold text-emerald-800 dark:text-emerald-400 flex items-center gap-2">
           {editingPage ? <Edit size={18}/> : <Plus size={18}/>} {editingPage ? 'Edit Page' : 'Create Page'}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="p-2.5 border rounded-lg text-sm dark:bg-gray-700 dark:text-white" placeholder="Page Title" />
-          <input type="text" value={slug} onChange={e=>setSlug(e.target.value)} className="p-2.5 border rounded-lg text-sm dark:bg-gray-700 dark:text-white" placeholder="Slug (optional)" />
-        </div>
-        <div className="border dark:border-gray-600 rounded-lg overflow-hidden">
-          <div className="bg-gray-50 dark:bg-gray-700 p-2 border-b dark:border-gray-600 flex gap-2">
-            <button onClick={()=>insertTag('h2', 'h2')} className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded"><Heading1 size={16}/></button>
-            <button onClick={()=>insertTag('b', 'b')} className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded"><Bold size={16}/></button>
-            <button onClick={()=>insertTag('li', 'li')} className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded"><List size={16}/></button>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">Page Title</label>
+            <input type="text" value={title} onChange={e=>setTitle(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500" placeholder="e.g., About Our School" />
           </div>
-          <textarea ref={textareaRef} value={content} onChange={e=>setContent(e.target.value)} className="w-full h-64 p-4 text-sm dark:bg-gray-800 dark:text-white font-mono focus:outline-none" placeholder="HTML or Text Content" />
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase">URL Slug (e.g. about-us)</label>
+            <input type="text" value={slug} onChange={e=>setSlug(e.target.value)} className="w-full p-2.5 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-emerald-500 font-mono" placeholder="slug-name" />
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button onClick={handleSave} className="bg-emerald-700 text-white px-8 py-2 rounded-lg font-bold flex items-center gap-2"><Save size={18}/> Save Page</button>
-          {editingPage && <button onClick={reset} className="bg-gray-500 text-white px-4 py-2 rounded-lg font-bold">Cancel</button>}
+        
+        <div className="space-y-1">
+          <label className="text-[10px] font-bold text-gray-400 uppercase">Page Content</label>
+          <div className="prose prose-sm max-w-none">
+            <CKEditor
+              editor={ClassicEditor}
+              data={content}
+              onChange={(_, editor) => {
+                const data = editor.getData();
+                setContent(data);
+              }}
+              config={{
+                licenseKey: 'GPL', // Required for CKEditor 5 v42+
+                placeholder: 'Design your page content here...',
+                toolbar: [
+                  'heading', '|', 'bold', 'italic', 'link', 'bulletedList', 'numberedList', 'blockQuote', 'insertTable', 'mediaEmbed', 'undo', 'redo'
+                ]
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-2 pt-4">
+          <button 
+            onClick={handleSave} 
+            disabled={!title.trim() || isSaving}
+            className="bg-emerald-700 hover:bg-emerald-800 text-white px-8 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all disabled:opacity-50"
+          >
+            {isSaving ? <RefreshCw className="animate-spin" size={18}/> : <Save size={18}/>} 
+            {editingPage ? 'Update Page' : 'Save Page'}
+          </button>
+          {editingPage && (
+            <button onClick={reset} className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-2.5 rounded-xl font-bold hover:bg-gray-300 transition-all">
+              Cancel
+            </button>
+          )}
         </div>
       </div>
+
       <div className="bg-white dark:bg-gray-800 rounded-xl border dark:border-gray-700 overflow-hidden shadow-sm">
+        <div className="bg-gray-50 dark:bg-gray-900/50 p-4 border-b dark:border-gray-700">
+          <h4 className="font-bold text-sm text-gray-500 uppercase tracking-widest">Existing Pages</h4>
+        </div>
         <ul className="divide-y dark:divide-gray-700">
           {pages.map(p => {
             const isThisDeleting = deletingId === p.id;
             return (
-              <li key={p.id} className={`p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 ${isThisDeleting ? 'opacity-50' : ''}`}>
-                <div><p className="font-bold text-sm dark:text-white">{p.title}</p><p className="text-xs text-gray-400">/{p.slug}</p></div>
-                <div className="flex gap-1">
-                  <button disabled={isThisDeleting} onClick={()=>{setEditingPage(p); setTitle(p.title); setSlug(p.slug); setContent(p.content); window.scrollTo({top:0, behavior:'smooth'})}} className="text-blue-400 p-2 disabled:opacity-50"><Edit size={18}/></button>
-                  <button disabled={isThisDeleting} onClick={()=>handleDeletePage(p.id)} className="text-red-400 p-2 disabled:opacity-50">
+              <li key={p.id} className={`p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-700/50 group transition-colors ${isThisDeleting ? 'opacity-50' : ''}`}>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/30 rounded-lg flex items-center justify-center text-emerald-600">
+                    <FileIcon size={20} />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm dark:text-white group-hover:text-emerald-600 transition-colors">{p.title}</p>
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-tight">Slug: /{p.slug}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    disabled={isThisDeleting} 
+                    onClick={()=>{
+                      setEditingPage(p); 
+                      setTitle(p.title); 
+                      setSlug(p.slug); 
+                      setContent(p.content); 
+                      window.scrollTo({top:0, behavior:'smooth'});
+                    }} 
+                    className="p-2 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-all"
+                    title="Edit Page"
+                  >
+                    <Edit size={18}/>
+                  </button>
+                  <button 
+                    disabled={isThisDeleting} 
+                    onClick={()=>handleDeletePage(p.id)} 
+                    className="p-2 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
+                    title="Delete Page"
+                  >
                     {isThisDeleting ? <RefreshCw size={18} className="animate-spin" /> : <Trash2 size={18}/>}
                   </button>
                 </div>
               </li>
             );
           })}
+          {pages.length === 0 && (
+            <li className="p-10 text-center text-gray-400 italic text-sm">No dynamic pages created yet.</li>
+          )}
         </ul>
       </div>
     </div>
   );
 };
+
+const FileIcon = ({ size }: { size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+);
 
 export default AdminPages;
