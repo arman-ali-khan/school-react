@@ -8,6 +8,9 @@ import {
   fetchAllContent, 
   addNoticeThunk, 
   addNewsThunk, 
+  addPageThunk,
+  updatePageThunk,
+  deletePageThunk,
   deleteNoticeThunk, 
   deleteNewsThunk, 
   updateSettingsThunk, 
@@ -44,11 +47,10 @@ import SingleNewsPage from './pages/SingleNewsPage';
 import SearchPage from './pages/SearchPage';
 import AllNoticesPage from './pages/AllNoticesPage';
 import AllNewsPage from './pages/AllNewsPage';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminDashboard from './pages/AdminDashboard.tsx';
 import DynamicPage from './pages/DynamicPage';
 
 const App: React.FC = () => {
-  // Fix: Cast dispatch to any to resolve TypeScript errors with AsyncThunkAction and allow unwrap() calls on the returned result.
   const dispatch = useDispatch<AppDispatch>() as any;
   const { user, isLoading: isAuthLoading } = useSelector((state: RootState) => state.auth);
   const { 
@@ -155,6 +157,9 @@ const App: React.FC = () => {
             topBarConfig={topBarConfig} footerConfig={footerConfig} homeWidgets={homeWidgets}
             onAddNotice={(n) => dispatch(addNoticeThunk(n)).unwrap()}
             onAddNews={(n) => dispatch(addNewsThunk(n)).unwrap()}
+            onAddPage={(p) => dispatch(addPageThunk(p)).unwrap()}
+            onUpdatePage={(p) => dispatch(updatePageThunk(p)).unwrap()}
+            onDeletePage={(id) => dispatch(deletePageThunk(id))}
             onDeleteNotice={(id) => dispatch(deleteNoticeThunk(id))}
             onDeleteNews={(id) => dispatch(deleteNewsThunk(id))}
             onUpdatePages={items => {}}

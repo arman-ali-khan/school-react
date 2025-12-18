@@ -38,10 +38,10 @@ export const fetchAllContent = createAsyncThunk('content/fetchAll', async () => 
   const results = await Promise.allSettled([
     supabase.from('notices').select('*').order('date', { ascending: false }),
     supabase.from('news_items').select('*').order('date', { ascending: false }),
-    supabase.from('pages').select('*'),
+    supabase.from('pages').select('*').order('date', { ascending: false }),
     supabase.from('carousel_items').select('*').order('id'),
     supabase.from('home_widgets').select('*').order('id'),
-    supabase.from('sidebar_sections').select('*').order('id'),
+    supabase.from('sidebar_sections').select('*').order('order_index', { ascending: true }),
     supabase.from('settings').select('value').eq('key', 'topBarConfig'),
     supabase.from('settings').select('value').eq('key', 'footerConfig')
   ]);
@@ -60,22 +60,49 @@ export const fetchAllContent = createAsyncThunk('content/fetchAll', async () => 
 });
 
 export const addNoticeThunk = createAsyncThunk('content/addNotice', async (notice: Notice, { rejectWithValue }) => {
-  const { data, error } = await supabase.from('notices').insert([notice]).select().single();
+  const { id, ...payload } = notice;
+  const { data, error } = await supabase.from('notices').insert([payload]).select().single();
   if (error) return rejectWithValue(error.message);
   return data as Notice;
 });
 
 export const addNewsThunk = createAsyncThunk('content/addNews', async (newsItem: NewsItem, { rejectWithValue }) => {
-  const { data, error } = await supabase.from('news_items').insert([newsItem]).select().single();
+  const { id, ...payload } = newsItem;
+  const { data, error } = await supabase.from('news_items').insert([payload]).select().single();
   if (error) return rejectWithValue(error.message);
   return data as NewsItem;
 });
 
+export const addPageThunk = createAsyncThunk('content/addPage', async (page: Page, { rejectWithValue }) => {
+  const { id, ...payload } = page;
+  const { data, error } = await supabase.from('pages').insert([payload]).select().single();
+  if (error) return rejectWithValue(error.message);
+  return data as Page;
+});
+
+export const updatePageThunk = createAsyncThunk('content/updatePage', async (page: Page, { rejectWithValue }) => {
+  const { id, created_at, ...payload } = page as any;
+  const { data, error } = await supabase.from('pages').update(payload).eq('id', id).select().single();
+  if (error) return rejectWithValue(error.message);
+  return data as Page;
+});
+
 export const updateSidebarThunk = createAsyncThunk('content/updateSidebar', async (sections: SidebarSection[]) => {
-    // Delete all and re-insert to maintain order and simplicity in this POC
-    await supabase.from('sidebar_sections').delete().neq('id', '0');
-    const { data, error } = await supabase.from('sidebar_sections').insert(sections).select();
-    if (error) throw error;
+    // To maintain synchronization, we delete existing and re-insert with correct order_index
+    // Note: In production, a more granular update/reorder logic is preferred, but for 
+    // widget management, full-sync is standard.
+    const { error: deleteError } = await supabase.from('sidebar_sections').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (deleteError) throw deleteError;
+
+    const payload = sections.map((s, index) => ({
+        title: s.title,
+        type: s.type,
+        data: s.data,
+        order_index: index
+    }));
+
+    const { data, error: insertError } = await supabase.from('sidebar_sections').insert(payload).select();
+    if (insertError) throw insertError;
     return data as SidebarSection[];
 });
 
@@ -94,6 +121,12 @@ export const deleteNoticeThunk = createAsyncThunk('content/deleteNotice', async 
 
 export const deleteNewsThunk = createAsyncThunk('content/deleteNews', async (id: string) => {
   const { error } = await supabase.from('news_items').delete().eq('id', id);
+  if (error) throw error;
+  return id;
+});
+
+export const deletePageThunk = createAsyncThunk('content/deletePage', async (id: string) => {
+  const { error } = await supabase.from('pages').delete().eq('id', id);
   if (error) throw error;
   return id;
 });
@@ -130,6 +163,12 @@ const contentSlice = createSlice({
       .addCase(addNewsThunk.fulfilled, (state, action) => {
         state.news.unshift(action.payload);
       })
+      .addCase(addPageThunk.fulfilled, (state, action) => {
+        state.pages.unshift(action.payload);
+      })
+      .addCase(updatePageThunk.fulfilled, (state, action) => {
+        state.pages = state.pages.map(p => p.id === action.payload.id ? action.payload : p);
+      })
       .addCase(updateSidebarThunk.fulfilled, (state, action) => {
         state.sidebarSections = action.payload;
       })
@@ -141,6 +180,9 @@ const contentSlice = createSlice({
       })
       .addCase(deleteNewsThunk.fulfilled, (state, action) => {
         state.news = state.news.filter(n => n.id !== action.payload);
+      })
+      .addCase(deletePageThunk.fulfilled, (state, action) => {
+        state.pages = state.pages.filter(p => p.id !== action.payload);
       })
       .addCase(updateSettingsThunk.fulfilled, (state, action) => {
         if (action.payload.key === 'topBarConfig') state.topBarConfig = action.payload.value;

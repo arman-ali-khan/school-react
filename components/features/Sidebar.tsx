@@ -1,9 +1,14 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ChevronRight, Phone, ChevronDown, ChevronUp, ExternalLink, 
   Play, Headphones, Edit, UserPlus, FileText, Archive, Mail, 
-  MapPin, Globe, Video 
+  MapPin, Globe, Video, Clock, Calendar, Timer,
+  Book, BookOpen, GraduationCap, School, Library, Pencil, Pen, Eraser, 
+  Ruler, Calculator, FlaskConical, Atom, Languages, Music, Palette, 
+  Microscope, Dna, Binary, Code, Cpu, Laptop, Tablets, Award, Medal, 
+  Trophy, Star, Users, User, UserCheck, History, Landmark, Navigation, 
+  Compass, CheckCircle, AlertCircle, Info, HelpCircle, File, Speaker, Search
 } from 'lucide-react';
 import { SidebarSection, SidebarLink, SidebarHotline } from '../../types';
 
@@ -13,7 +18,12 @@ interface SidebarProps {
 }
 
 const IconMapper: Record<string, React.FC<any>> = {
-  Edit, UserPlus, FileText, Archive, Mail, MapPin, Globe, Play, Video
+  Edit, UserPlus, FileText, Archive, Mail, MapPin, Globe, Play, Video,
+  Book, BookOpen, GraduationCap, School, Library, Pencil, Pen, Eraser, 
+  Ruler, Calculator, FlaskConical, Atom, Languages, Music, Palette, 
+  Microscope, Dna, Binary, Code, Cpu, Laptop, Tablets, Award, Medal, 
+  Trophy, Star, Users, User, UserCheck, History, Landmark, Navigation, 
+  Compass, Clock, Calendar, CheckCircle, AlertCircle, Info, HelpCircle, File, Speaker, Search
 };
 
 const MessageSection: React.FC<{ data: any, onNavigate: () => void }> = ({ data, onNavigate }) => (
@@ -180,6 +190,90 @@ const HotlineSection: React.FC<{ title: string, data: any }> = ({ title, data })
     );
 }
 
+const CountdownSection: React.FC<{ title: string, data: any }> = ({ title, data }) => {
+    const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number } | null>(null);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            const target = new Date(data.targetDate).getTime();
+            const now = new Date().getTime();
+            const diff = target - now;
+
+            if (diff <= 0) {
+                setTimeLeft(null);
+                clearInterval(timer);
+                return;
+            }
+
+            setTimeLeft({
+                d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+                h: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+                m: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+                s: Math.floor((diff % (1000 * 60)) / 1000)
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [data.targetDate]);
+
+    return (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden transition-colors">
+            <div className="bg-orange-600 text-white p-2 flex items-center gap-2 font-bold text-sm">
+               <Timer size={16} /> {title}
+            </div>
+            <div className="p-4 bg-orange-50 dark:bg-gray-900/50">
+                {timeLeft ? (
+                    <div className="grid grid-cols-4 gap-2 text-center">
+                        {Object.entries(timeLeft).map(([unit, val]) => (
+                            <div key={unit} className="bg-white dark:bg-gray-800 border border-orange-100 dark:border-gray-700 p-2 rounded shadow-sm">
+                                <div className="text-xl font-black text-orange-600">{val}</div>
+                                <div className="text-[9px] uppercase font-bold text-gray-400">{unit === 'd' ? 'Days' : unit === 'h' ? 'Hrs' : unit === 'm' ? 'Min' : 'Sec'}</div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center text-sm font-bold text-gray-500 py-2">Event Started or Expired</div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+const DateTimeSection: React.FC<{ title: string }> = ({ title }) => {
+    const [now, setNow] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden transition-colors">
+            <div className="bg-emerald-800 text-white p-2 font-bold text-sm">
+               {title || 'Current Time'}
+            </div>
+            <div className="p-4 flex flex-col items-center gap-1">
+                <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400 flex items-center gap-2">
+                    <Clock size={20} /> {now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </div>
+                <div className="text-sm font-bold text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                    <Calendar size={14} /> {now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const NoticeTextSection: React.FC<{ title: string, data: any }> = ({ title, data }) => (
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden transition-colors">
+        <div className="bg-emerald-700 text-white p-2 font-bold text-sm">
+           {title}
+        </div>
+        <div className="p-4 prose prose-sm dark:prose-invert max-w-none text-gray-700 dark:text-gray-300">
+            <div dangerouslySetInnerHTML={{ __html: data.content }} />
+        </div>
+    </div>
+);
+
 const Sidebar: React.FC<SidebarProps> = ({ sections, onNavigateChairman }) => {
   return (
     <div className="space-y-6">
@@ -201,6 +295,12 @@ const Sidebar: React.FC<SidebarProps> = ({ sections, onNavigateChairman }) => {
                   return <MapSection key={section.id} title={section.title} data={section.data} />;
               case 'video':
                   return <VideoSection key={section.id} title={section.title} data={section.data} />;
+              case 'countdown':
+                  return <CountdownSection key={section.id} title={section.title} data={section.data} />;
+              case 'datetime':
+                  return <DateTimeSection key={section.id} title={section.title} />;
+              case 'notice':
+                  return <NoticeTextSection key={section.id} title={section.title} data={section.data} />;
               default:
                   return null;
           }

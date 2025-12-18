@@ -60,7 +60,18 @@ export interface CarouselItem {
 }
 
 // Expanded SidebarSectionType
-export type SidebarSectionType = 'message' | 'image_card' | 'audio' | 'list' | 'hotlines' | 'map' | 'video' | 'image_only';
+export type SidebarSectionType = 
+  | 'message' 
+  | 'image_card' 
+  | 'audio' 
+  | 'list' 
+  | 'hotlines' 
+  | 'map' 
+  | 'video' 
+  | 'image_only'
+  | 'countdown'
+  | 'datetime'
+  | 'notice';
 
 export interface SidebarSection {
   id: string;
