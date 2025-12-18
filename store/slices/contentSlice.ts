@@ -69,13 +69,13 @@ export const fetchAllContent = createAsyncThunk('content/fetchAll', async () => 
   ]);
 
   const data: any = {};
-  if (results[0].status === 'fulfilled' && results[0].value.data?.length) data.notices = results[0].value.data;
-  if (results[1].status === 'fulfilled' && results[1].value.data?.length) data.news = results[1].value.data;
-  if (results[2].status === 'fulfilled' && results[2].value.data?.length) data.pages = results[2].value.data;
-  if (results[3].status === 'fulfilled' && results[3].value.data?.length) data.carouselItems = results[3].value.data;
-  if (results[4].status === 'fulfilled' && results[4].value.data?.length) data.homeWidgets = results[4].value.data;
-  if (results[5].status === 'fulfilled' && results[5].value.data?.length) data.sidebarSections = results[5].value.data;
-  if (results[6].status === 'fulfilled' && results[6].value.data?.length) {
+  if (results[0].status === 'fulfilled' && results[0].value.data) data.notices = results[0].value.data;
+  if (results[1].status === 'fulfilled' && results[1].value.data) data.news = results[1].value.data;
+  if (results[2].status === 'fulfilled' && results[2].value.data) data.pages = results[2].value.data;
+  if (results[3].status === 'fulfilled' && results[3].value.data) data.carouselItems = results[3].value.data;
+  if (results[4].status === 'fulfilled' && results[4].value.data) data.homeWidgets = results[4].value.data;
+  if (results[5].status === 'fulfilled' && results[5].value.data) data.sidebarSections = results[5].value.data;
+  if (results[6].status === 'fulfilled' && results[6].value.data) {
     data.infoCards = results[6].value.data.map((item: any) => ({
         id: item.id,
         title: item.title,
@@ -94,7 +94,6 @@ export const fetchAllContent = createAsyncThunk('content/fetchAll', async () => 
   return data;
 });
 
-// Thunks for various updates
 export const addNoticeThunk = createAsyncThunk('content/addNotice', async (notice: Notice) => {
   const { id, ...payload } = notice;
   const { data, error } = await supabase.from('notices').insert([payload]).select().single();
@@ -131,6 +130,7 @@ export const updateSettingsThunk = createAsyncThunk('content/updateSettings', as
 
 export const updateSidebarThunk = createAsyncThunk('content/updateSidebar', async (sections: SidebarSection[]) => {
     await supabase.from('sidebar_sections').delete().neq('id', '0');
+    if (sections.length === 0) return [];
     const payload = sections.map((s, index) => ({ title: s.title, type: s.type, data: s.data, order_index: index }));
     const { data, error } = await supabase.from('sidebar_sections').insert(payload).select();
     if (error) throw error;
@@ -139,7 +139,11 @@ export const updateSidebarThunk = createAsyncThunk('content/updateSidebar', asyn
 
 export const updateInfoCardsThunk = createAsyncThunk('content/updateInfoCards', async (cards: InfoCard[]) => {
     await supabase.from('info_cards').delete().neq('id', '0');
-    const payload = cards.map((c, index) => ({ title: c.title, icon_name: c.iconName, image_url: c.imageUrl, links: c.links, order_index: index }));
+    if (cards.length === 0) return [];
+    // Only save cards that aren't empty defaults
+    const validCards = cards.filter(c => c.title !== 'New Category' || c.links.length > 0 || c.imageUrl);
+    const payload = validCards.map((c, index) => ({ title: c.title, icon_name: c.iconName, image_url: c.imageUrl, links: c.links, order_index: index }));
+    if (payload.length === 0) return [];
     const { data, error } = await supabase.from('info_cards').insert(payload).select();
     if (error) throw error;
     return data.map((item: any) => ({ id: item.id, title: item.title, iconName: item.icon_name, imageUrl: item.image_url, links: item.links })) as InfoCard[];
@@ -147,6 +151,7 @@ export const updateInfoCardsThunk = createAsyncThunk('content/updateInfoCards', 
 
 export const updateHomeWidgetsThunk = createAsyncThunk('content/updateHomeWidgets', async (widgets: HomeWidgetConfig[]) => {
     await supabase.from('home_widgets').delete().neq('id', '0');
+    if (widgets.length === 0) return [];
     const { data, error } = await supabase.from('home_widgets').insert(widgets).select();
     if (error) throw error;
     return data as HomeWidgetConfig[];
@@ -171,11 +176,9 @@ const contentSlice = createSlice({
   name: 'content',
   initialState,
   reducers: {
-    // Reducer to update menu items manually if needed
     setMenuItems: (state, action: PayloadAction<MenuItem[]>) => {
       state.menuItems = action.payload;
     },
-    // Reducer to update info cards manually if needed
     setInfoCards: (state, action: PayloadAction<InfoCard[]>) => {
       state.infoCards = action.payload;
     },

@@ -12,7 +12,6 @@ import {
 } from 'lucide-react';
 import { InfoCard } from '../../types';
 
-// Map for icon selection UI
 const ICON_LIST = [
   'GraduationCap', 'Book', 'BookOpen', 'School', 'Library', 'Pencil', 'Pen', 'Eraser', 'Ruler', 'Calculator',
   'FlaskConical', 'Atom', 'Globe', 'Languages', 'Music', 'Palette', 'Microscope', 'Dna', 'Binary', 'Code',
@@ -47,15 +46,28 @@ const AdminInfoCards: React.FC<AdminInfoCardsProps> = ({ cards, onUpdate, genera
   const [searchIcon, setSearchIcon] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Sync with prop when database values change (e.g. after a successful save)
   useEffect(() => {
     setLocalCards(cards);
     setHasChanges(false);
   }, [cards]);
 
   const handleGlobalSave = async () => {
+    // Validation: Filter out cards that are completely empty or still have default values without links
+    const validCards = localCards.filter(c => {
+      const hasContent = c.title.trim() !== '' && c.title !== 'New Category';
+      const hasLinks = c.links.length > 0;
+      const hasImage = !!c.imageUrl;
+      return hasContent || hasLinks || hasImage;
+    });
+
+    if (validCards.length === 0 && localCards.length > 0) {
+      if (!window.confirm('The cards you added appear empty. Save anyway?')) return;
+    }
+
     setIsSaving(true);
     try {
-      await onUpdate(localCards);
+      await onUpdate(validCards);
       setHasChanges(false);
       alert('Info cards updated successfully!');
     } catch (err) {
@@ -66,7 +78,7 @@ const AdminInfoCards: React.FC<AdminInfoCardsProps> = ({ cards, onUpdate, genera
   };
 
   const handleAdd = () => {
-    const newId = generateUUID();
+    const newId = `temp-${generateUUID()}`;
     const newCard: InfoCard = { id: newId, title: 'New Category', iconName: 'FileText', links: [] };
     setLocalCards([...localCards, newCard]);
     setEditingCardId(newId);
@@ -74,7 +86,7 @@ const AdminInfoCards: React.FC<AdminInfoCardsProps> = ({ cards, onUpdate, genera
   };
 
   const handleUpdateLocal = (id: string, updates: Partial<InfoCard>) => {
-    setLocalCards(localCards.map(c => String(c.id) === String(id) ? { ...c, ...updates } : c));
+    setLocalCards(prev => prev.map(c => String(c.id) === String(id) ? { ...c, ...updates } : c));
     setHasChanges(true);
   };
 
@@ -105,7 +117,7 @@ const AdminInfoCards: React.FC<AdminInfoCardsProps> = ({ cards, onUpdate, genera
 
   const handleDelete = (id: string) => {
     if (window.confirm('Delete this card?')) {
-      setLocalCards(localCards.filter(c => String(c.id) !== String(id)));
+      setLocalCards(prev => prev.filter(c => String(c.id) !== String(id)));
       if (editingCardId === id) setEditingCardId(null);
       setHasChanges(true);
     }
@@ -117,7 +129,6 @@ const AdminInfoCards: React.FC<AdminInfoCardsProps> = ({ cards, onUpdate, genera
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-32">
-      {/* Header & Save Action */}
       <div className={`sticky top-20 z-40 bg-white dark:bg-gray-800 p-4 rounded-2xl border-2 shadow-xl transition-all flex flex-col sm:flex-row items-center justify-between gap-4 ${hasChanges ? 'border-emerald-500 ring-4 ring-emerald-500/10' : 'border-gray-200 dark:border-gray-700'}`}>
         <div className="flex items-center gap-3">
           <div className={`p-2 rounded-full ${hasChanges ? 'bg-emerald-100 text-emerald-600' : 'bg-gray-100 text-gray-400'}`}>
@@ -193,7 +204,6 @@ const AdminInfoCards: React.FC<AdminInfoCardsProps> = ({ cards, onUpdate, genera
               {isEditing && (
                 <div className="p-6 space-y-6 animate-in slide-in-from-top-4 duration-300">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Media Setup */}
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-gray-400 uppercase">Custom Image (Overrides Icon)</label>
@@ -254,7 +264,6 @@ const AdminInfoCards: React.FC<AdminInfoCardsProps> = ({ cards, onUpdate, genera
                       </div>
                     </div>
 
-                    {/* Links Setup */}
                     <div className="space-y-4">
                       <label className="text-[10px] font-bold text-gray-400 uppercase flex justify-between items-center">
                         Menu Links
@@ -296,11 +305,6 @@ const AdminInfoCards: React.FC<AdminInfoCardsProps> = ({ cards, onUpdate, genera
                             </button>
                           </div>
                         ))}
-                        {card.links.length === 0 && (
-                          <div className="text-center py-8 border-2 border-dashed rounded-xl border-gray-100 dark:border-gray-800">
-                            <p className="text-[10px] text-gray-400 font-bold uppercase">No links added</p>
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
@@ -315,9 +319,20 @@ const AdminInfoCards: React.FC<AdminInfoCardsProps> = ({ cards, onUpdate, genera
             </div>
           );
         })}
+
+        {localCards.length === 0 && (
+          <div className="lg:col-span-2 p-20 text-center border-2 border-dashed rounded-3xl border-gray-200 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50">
+            <Layout size={48} className="mx-auto text-gray-300 dark:text-gray-700 mb-4" />
+            <p className="text-gray-400 font-medium">No info cards. Click "Add Card" to create one.</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
+
+const Layout = ({ size, className }: { size: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+);
 
 export default AdminInfoCards;
