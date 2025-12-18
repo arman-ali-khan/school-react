@@ -118,13 +118,14 @@ export interface SEOMeta {
   author: string;
 }
 
-export type HomeWidgetType = 'youtube' | 'map' | 'image' | 'video';
+export type HomeWidgetType = 'youtube' | 'map' | 'image' | 'video' | 'html';
 
 export interface HomeWidgetConfig {
   id: string;
   title: string;
   type: HomeWidgetType;
   url: string;
+  content?: string;
 }
 
 export interface InfoCard {

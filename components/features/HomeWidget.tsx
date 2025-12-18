@@ -20,30 +20,44 @@ const HomeWidget: React.FC<HomeWidgetProps> = ({ config }) => {
                  src = src.replace('youtu.be/', 'www.youtube.com/embed/');
             }
             return (
-                <iframe 
-                  className="absolute top-0 left-0 w-full h-full"
-                  src={src} 
-                  title={config.title}
-                  frameBorder="0" 
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                  allowFullScreen
-                ></iframe>
+                <div className="relative pb-[56.25%] h-0 bg-gray-100 dark:bg-gray-900">
+                    <iframe 
+                      className="absolute top-0 left-0 w-full h-full"
+                      src={src} 
+                      title={config.title}
+                      frameBorder="0" 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      allowFullScreen
+                    ></iframe>
+                </div>
             );
         case 'map':
             return (
-                 <iframe 
-                  className="absolute top-0 left-0 w-full h-full"
-                  src={config.url}
-                  title={config.title} 
-                  style={{ border: 0 }} 
-                  allowFullScreen={true}
-                  loading="lazy" 
-                ></iframe>
+                <div className="relative pb-[56.25%] h-0 bg-gray-100 dark:bg-gray-900">
+                     <iframe 
+                      className="absolute top-0 left-0 w-full h-full"
+                      src={config.url}
+                      title={config.title} 
+                      style={{ border: 0 }} 
+                      allowFullScreen={true}
+                      loading="lazy" 
+                    ></iframe>
+                </div>
             );
         case 'image':
-            return <img src={config.url} alt={config.title} className="absolute top-0 left-0 w-full h-full object-cover" />;
+            return (
+                <div className="relative pb-[56.25%] h-0 bg-gray-100 dark:bg-gray-900">
+                    <img src={config.url} alt={config.title} className="absolute top-0 left-0 w-full h-full object-cover" />
+                </div>
+            );
+        case 'html':
+            return (
+                <div className="p-4 bg-white dark:bg-gray-900 prose dark:prose-invert max-w-none min-h-[100px]">
+                    <div dangerouslySetInnerHTML={{ __html: config.content || '' }} />
+                </div>
+            );
         default:
-            return <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-500">Resource Unavailable</div>;
+            return <div className="p-10 flex items-center justify-center bg-gray-100 dark:bg-gray-800 text-gray-500">Resource Unavailable</div>;
     }
   };
 
@@ -53,9 +67,7 @@ const HomeWidget: React.FC<HomeWidgetProps> = ({ config }) => {
         <h3 className="font-bold text-sm">{config.title}</h3>
       </div>
       
-      <div className="relative pb-[56.25%] h-0 bg-gray-100 dark:bg-gray-900">
-        {renderContent()}
-      </div>
+      {renderContent()}
     </div>
   );
 };
