@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { NewsItem } from '../types';
+import { NewsItem } from '../../types';
 
 const ITEM_HEIGHT = 24; 
 
@@ -24,7 +24,7 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems, onNavigateNews, onVi
   return (
     <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 p-2 flex items-center justify-between rounded-lg shadow-sm mb-4 transition-colors">
        <div className="flex items-center flex-1 overflow-hidden px-1">
-          <span className="font-bold text-emerald-800 dark:text-emerald-400 mr-2 whitespace-nowrap text-sm">খবর:</span>
+          <span className="font-bold text-emerald-800 dark:text-emerald-400 mr-2 whitespace-nowrap text-sm">Update:</span>
           
           <div className="relative w-full overflow-hidden" style={{ height: `${ITEM_HEIGHT}px` }}>
              <div 
@@ -46,7 +46,7 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems, onNavigateNews, onVi
                     </div>
                 ))}
                 {newsItems.length === 0 && (
-                     <div className="text-sm text-gray-500 italic">No news updates available.</div>
+                     <div className="text-sm text-gray-500 italic">No news updates.</div>
                 )}
              </div>
           </div>
@@ -56,7 +56,7 @@ const NewsTicker: React.FC<NewsTickerProps> = ({ newsItems, onNavigateNews, onVi
           onClick={onViewAll}
           className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white text-[11px] font-bold px-3 py-1 ml-3 rounded shadow-sm transition-colors uppercase tracking-wider shrink-0"
        >
-          সকল
+          All
        </button>
     </div>
   );

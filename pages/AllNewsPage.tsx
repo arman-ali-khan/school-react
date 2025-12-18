@@ -1,8 +1,8 @@
+
 import React, { useState } from 'react';
 import { ArrowLeft, Newspaper, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { NewsItem } from '../types';
 
-// Updated interface to use NewsItem type correctly
 interface AllNewsPageProps {
   newsItems: NewsItem[];
   onBack: () => void;
@@ -14,7 +14,6 @@ const ITEMS_PER_PAGE = 5;
 const AllNewsPage: React.FC<AllNewsPageProps> = ({ newsItems, onBack, onNavigateNews }) => {
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Pagination Logic
   const totalPages = Math.ceil(newsItems.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
   const currentNewsItems = newsItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -28,7 +27,6 @@ const AllNewsPage: React.FC<AllNewsPageProps> = ({ newsItems, onBack, onNavigate
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 transition-colors min-h-[80vh] flex flex-col">
-        {/* Header */}
         <div className="bg-emerald-50 dark:bg-emerald-900/20 p-6 border-b border-emerald-100 dark:border-gray-700">
              <button onClick={onBack} className="flex items-center text-sm text-emerald-700 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-emerald-300 font-bold mb-2">
                 <ArrowLeft size={16} className="mr-1" /> Back to Home
@@ -44,10 +42,8 @@ const AllNewsPage: React.FC<AllNewsPageProps> = ({ newsItems, onBack, onNavigate
              </p>
         </div>
 
-        {/* Content */}
         <div className="p-4 md:p-8 flex-grow">
             <div className="grid gap-4">
-                {/* Map through NewsItem objects instead of strings */}
                 {currentNewsItems.map((news) => (
                     <div 
                         key={news.id} 
@@ -79,7 +75,6 @@ const AllNewsPage: React.FC<AllNewsPageProps> = ({ newsItems, onBack, onNavigate
             </div>
         </div>
 
-        {/* Pagination Controls */}
         {newsItems.length > ITEMS_PER_PAGE && (
           <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-center items-center gap-2">
             <button 

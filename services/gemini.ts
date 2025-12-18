@@ -4,38 +4,28 @@ import { GoogleGenAI } from "@google/genai";
 const SYSTEM_INSTRUCTION = `
 You are the Virtual Assistant for the Board of Intermediate and Secondary Education, Dinajpur, Bangladesh. 
 Your goal is to assist students, teachers, and guardians with information regarding the board.
-
 Guidelines:
 - Official website: dinajpureducationboard.gov.bd.
 - Location: Upashahar, Dinajpur.
-- Assist with: SSC/HSC exam schedules, registration steps, fees, and general queries.
-- Do not provide private student data. Guide users to the official results portal instead.
 - Be concise, professional, and helpful in both English and Bangla.
 `;
 
 export const getGeminiResponse = async (prompt: string): Promise<string> => {
-  if (!process.env.API_KEY) {
-    return "API Configuration Error: Key missing.";
-  }
+  if (!process.env.API_KEY) return "API Configuration Error.";
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
-    // Using gemini-3-flash-preview for balanced speed and intelligence as per guidelines.
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         temperature: 0.7,
-        topP: 0.8,
-        topK: 40
       }
     });
-
-    return response.text || "I'm sorry, I couldn't process that request.";
+    return response.text || "No response generated.";
   } catch (error) {
-    console.error("Gemini AI Service Failure:", error);
-    return "The assistant is temporarily unavailable. Please try again in a moment.";
+    console.error("Gemini Error:", error);
+    return "The assistant is temporarily unavailable.";
   }
 };

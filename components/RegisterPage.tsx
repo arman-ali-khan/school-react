@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { User, Lock, Mail, Phone, ArrowLeft, Building, AlertCircle, RefreshCw } from 'lucide-react';
-import { User as UserType } from '../types';
+import { User as UserType, UserRole } from '../types';
 import { supabase } from '../supabaseClient';
 
 interface RegisterPageProps {
@@ -15,7 +15,7 @@ interface RegisterPageProps {
 const RegisterPage: React.FC<RegisterPageProps> = ({ onBack, onLoginClick, onTermsClick, onPrivacyClick, onRegisterSuccess }) => {
   const [formData, setFormData] = useState({
       name: '',
-      role: 'Student',
+      role: 'Student' as UserRole, // Explicitly typed to avoid 'string' mismatch
       institute: '',
       email: '',
       mobile: '',
@@ -80,7 +80,7 @@ const RegisterPage: React.FC<RegisterPageProps> = ({ onBack, onLoginClick, onTer
           const newUser: UserType = {
             name: formData.name,
             email: formData.email,
-            role: formData.role,
+            role: formData.role, // Now correctly typed as UserRole
             institute: formData.institute,
             mobile: formData.mobile
           };

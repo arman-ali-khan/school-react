@@ -1,10 +1,4 @@
 
-import React from 'react';
-
-/**
- * CORE INTERFACES
- */
-
 export interface Notice {
   id: string;
   title: string;
@@ -34,10 +28,6 @@ export interface User {
   mobile?: string;
 }
 
-/**
- * CMS & LAYOUT INTERFACES
- */
-
 export interface Page {
   id: string;
   title: string;
@@ -59,32 +49,13 @@ export interface CarouselItem {
   caption: string;
 }
 
-// Expanded SidebarSectionType
-export type SidebarSectionType = 'message' | 'image_card' | 'audio' | 'list' | 'hotlines' | 'map' | 'video' | 'image_only';
+export type SidebarSectionType = 'message' | 'image_card' | 'audio' | 'list' | 'hotlines';
 
 export interface SidebarSection {
   id: string;
   type: SidebarSectionType;
   title: string;
-  data: any; 
-}
-
-export interface SidebarLink {
-  label: string;
-  href: string;
-  isExternal?: boolean;
-  badge?: string;
-  iconName?: string; // Optional icon for the link
-}
-
-export interface SidebarHotline {
-  title: string;
-  number: string;
-}
-
-export interface QuickLink {
-  text: string;
-  href: string;
+  data: any;
 }
 
 export interface TopBarConfig {
@@ -102,15 +73,6 @@ export interface FooterConfig {
   copyrightText: string;
 }
 
-export type HomeWidgetType = 'youtube' | 'map' | 'image' | 'video';
-
-export interface HomeWidgetConfig {
-  id: string;
-  title: string;
-  type: HomeWidgetType;
-  url: string;
-}
-
 export interface InfoCard {
   id: string;
   title: string;
@@ -122,4 +84,11 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: Date;
+}
+
+export interface HomeWidgetConfig {
+  id: string;
+  title: string;
+  type: 'youtube' | 'map' | 'image' | 'video';
+  url: string;
 }

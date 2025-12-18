@@ -4,35 +4,46 @@ import { RefreshCw } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from './store';
 import { restoreSession, signOutUser, setUser } from './store/slices/authSlice';
-import { fetchAllContent, addNoticeThunk, deleteNoticeThunk, updateSettingsThunk, setMenuItems, setInfoCards } from './store/slices/contentSlice';
+import { 
+  fetchAllContent, 
+  addNoticeThunk, 
+  addNewsThunk, 
+  deleteNoticeThunk, 
+  deleteNewsThunk, 
+  updateSettingsThunk, 
+  setMenuItems, 
+  setInfoCards 
+} from './store/slices/contentSlice';
 
-import TopBar from './components/TopBar';
-import Header from './components/Header';
-import Navbar from './components/Navbar';
-import HeroSlider from './components/HeroSlider';
-import NoticeBoard from './components/NoticeBoard';
-import Sidebar from './components/Sidebar';
-import ChatWidget from './components/ChatWidget';
-import Footer from './components/Footer';
-import InfoCardsSection from './components/InfoCardsSection';
-import NewsTicker from './components/NewsTicker';
-import HomeWidget from './components/HomeWidget';
-import LoginPage from './components/LoginPage';
-import RegisterPage from './components/RegisterPage';
-import TermsPage from './components/TermsPage';
-import PrivacyPolicyPage from './components/PrivacyPolicyPage';
-import ForgotPasswordPage from './components/ForgotPasswordPage';
-import ChairmanMessagePage from './components/ChairmanMessagePage';
-import SingleNoticePage from './components/SingleNoticePage';
-import SingleNewsPage from './components/SingleNewsPage';
-import SearchPage from './components/SearchPage';
-import AllNoticesPage from './components/AllNoticesPage';
-import AllNewsPage from './components/AllNewsPage';
-import AdminDashboard from './components/AdminDashboard';
-import DynamicPage from './components/DynamicPage';
-import { Notice, User, TopBarConfig, FooterConfig } from './types';
+// Layout Components
+import TopBar from './components/layout/TopBar';
+import Header from './components/layout/Header';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
 
-type PageType = 'home' | 'login' | 'register' | 'terms' | 'privacy' | 'forgot-password' | 'chairman' | 'notice' | 'news' | 'search' | 'all-notices' | 'all-news' | 'admin-dashboard' | 'page-viewer';
+// Feature Components
+import ChatWidget from './components/features/ChatWidget';
+import HeroSlider from './components/features/HeroSlider';
+import NewsTicker from './components/features/NewsTicker';
+import NoticeBoard from './components/features/NoticeBoard';
+import Sidebar from './components/features/Sidebar';
+import InfoCardsSection from './components/features/InfoCardsSection';
+import HomeWidget from './components/features/HomeWidget';
+
+// Page Components
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import TermsPage from './pages/TermsPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import ChairmanMessagePage from './pages/ChairmanMessagePage';
+import SingleNoticePage from './pages/SingleNoticePage';
+import SingleNewsPage from './pages/SingleNewsPage';
+import SearchPage from './pages/SearchPage';
+import AllNoticesPage from './pages/AllNoticesPage';
+import AllNewsPage from './pages/AllNewsPage';
+import AdminDashboard from './pages/AdminDashboard';
+import DynamicPage from './pages/DynamicPage';
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -43,28 +54,20 @@ const App: React.FC = () => {
     homeWidgets, isLoading: isContentLoading 
   } = useSelector((state: RootState) => state.content);
 
-  const [currentPage, setCurrentPage] = useState<PageType>('home');
-  const [currentNoticeId, setCurrentNoticeId] = useState<string>('');
-  const [currentNewsTitle, setCurrentNewsTitle] = useState<string>('');
-  const [currentSlug, setCurrentSlug] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<string>('home');
+  const [routeParams, setRouteParams] = useState<any>({});
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  const handleNavigate = useCallback((page: PageType, params?: { id?: string, title?: string, query?: string, slug?: string }, updateHash = true) => {
-    if (params?.id) setCurrentNoticeId(params.id);
-    if (params?.title) setCurrentNewsTitle(params.title);
-    if (params?.query) setSearchQuery(params.query);
-    if (params?.slug) setCurrentSlug(params.slug);
-    
+  const navigate = useCallback((page: string, params: any = {}, updateHash = true) => {
     setCurrentPage(page);
-    window.scrollTo(0, 0);
+    setRouteParams(params);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 
     if (updateHash) {
       const searchParams = new URLSearchParams();
-      if (params?.id) searchParams.set('id', params.id);
-      if (params?.title) searchParams.set('title', params.title);
-      if (params?.query) searchParams.set('q', params.query);
-      if (params?.slug) searchParams.set('slug', params.slug);
+      Object.entries(params).forEach(([key, val]) => {
+        if (val) searchParams.set(key, String(val));
+      });
       const queryString = searchParams.toString();
       window.location.hash = queryString ? `${page}?${queryString}` : page;
     }
@@ -74,129 +77,137 @@ const App: React.FC = () => {
     dispatch(restoreSession());
     dispatch(fetchAllContent());
     
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) setIsDarkMode(true);
-
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (!hash) { handleNavigate('home', {}, false); return; }
-      const [pagePart, queryPart] = hash.split('?');
-      const params = new URLSearchParams(queryPart || '');
-      handleNavigate(pagePart as PageType, {
-        id: params.get('id') || '',
-        title: params.get('title') || '',
-        query: params.get('q') || '',
-        slug: params.get('slug') || ''
-      }, false);
+      if (!hash) { navigate('home', {}, false); return; }
+      const [page, query] = hash.split('?');
+      const params = Object.fromEntries(new URLSearchParams(query || ''));
+      navigate(page, params, false);
     };
 
     window.addEventListener('hashchange', handleHashChange);
+    handleHashChange(); 
     return () => window.removeEventListener('hashchange', handleHashChange);
-  }, [dispatch, handleNavigate]);
+  }, [dispatch, navigate]);
 
   useEffect(() => {
     if (isDarkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [isDarkMode]);
 
-  const toggleTheme = () => setIsDarkMode(!isDarkMode);
-
-  const handleLogout = async () => {
-    await dispatch(signOutUser());
-    handleNavigate('home');
-  };
-
-  const handleMenuNavigation = (href: string) => {
-    if (href.startsWith('page:')) {
-      handleNavigate('page-viewer', { slug: href.replace('page:', '') });
-    } else if (href === 'home' || href === 'chairman') {
-      handleNavigate(href as any);
-    } else if (href.startsWith('http')) {
-      window.open(href, '_blank');
+  const renderActivePage = () => {
+    switch (currentPage) {
+      case 'home':
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="lg:col-span-8 space-y-8">
+              <HeroSlider items={carouselItems} />
+              <NewsTicker 
+                newsItems={news} 
+                onNavigateNews={(item) => navigate('news', { newsId: item.id })} 
+                onViewAll={() => navigate('all-news')} 
+              />
+              <NoticeBoard 
+                notices={notices} 
+                onNavigateNotice={(id) => navigate('notice', { id })} 
+                onViewAll={() => navigate('all-notices')} 
+              />
+              <InfoCardsSection cards={infoCards} />
+              <div className="space-y-6">
+                {homeWidgets.map(w => <HomeWidget key={w.id} config={w} />)}
+              </div>
+            </div>
+            <div className="lg:col-span-4">
+              <Sidebar 
+                sections={sidebarSections} 
+                onNavigateChairman={() => navigate('chairman')} 
+              />
+            </div>
+          </div>
+        );
+      
+      case 'login':
+        return <LoginPage onBack={() => navigate('home')} onRegisterClick={() => navigate('register')} onForgotPasswordClick={() => navigate('forgot-password')} onLogin={(u) => { dispatch(setUser(u)); navigate('home'); }} />;
+      case 'register':
+        return <RegisterPage onBack={() => navigate('home')} onLoginClick={() => navigate('login')} onTermsClick={() => navigate('terms')} onPrivacyClick={() => navigate('privacy')} onRegisterSuccess={(u) => { dispatch(setUser(u)); navigate('home'); }} />;
+      case 'forgot-password': return <ForgotPasswordPage onBack={() => navigate('login')} />;
+      case 'terms': return <TermsPage onBack={() => window.history.back()} />;
+      case 'privacy': return <PrivacyPolicyPage onBack={() => window.history.back()} />;
+      case 'chairman': return <ChairmanMessagePage onBack={() => navigate('home')} />;
+      case 'notice': return <SingleNoticePage noticeId={routeParams.id} notices={notices} onBack={() => navigate('home')} />;
+      case 'news': return <SingleNewsPage newsItem={news.find(n => n.id === routeParams.newsId)} onBack={() => navigate('home')} />;
+      case 'all-notices': return <AllNoticesPage notices={notices} onBack={() => navigate('home')} onNavigateNotice={(id) => navigate('notice', { id })} />;
+      case 'all-news': return <AllNewsPage newsItems={news} onBack={() => navigate('home')} onNavigateNews={(n) => navigate('news', { newsId: n.id })} />;
+      case 'search': return <SearchPage query={routeParams.q || ''} notices={notices} onBack={() => navigate('home')} onNavigateNotice={(id) => navigate('notice', { id })} />;
+      case 'page-viewer':
+        const page = pages.find(p => p.slug === routeParams.slug);
+        return page ? <DynamicPage page={page} onBack={() => navigate('home')} /> : <NotFound />;
+      case 'admin-dashboard':
+        if (user?.role !== 'Admin') return <AccessDenied />;
+        return (
+          <AdminDashboard 
+            user={user} notices={notices} news={news} pages={pages} 
+            carouselItems={carouselItems} sidebarSections={sidebarSections} 
+            infoCards={infoCards} menuItems={menuItems} 
+            topBarConfig={topBarConfig} footerConfig={footerConfig} homeWidgets={homeWidgets}
+            onAddNotice={(n) => dispatch(addNoticeThunk(n)).unwrap()}
+            onAddNews={(n) => dispatch(addNewsThunk(n)).unwrap()}
+            onDeleteNotice={(id) => dispatch(deleteNoticeThunk(id))}
+            onDeleteNews={(id) => dispatch(deleteNewsThunk(id))}
+            onUpdatePages={items => {}}
+            onUpdateCarousel={items => {}}
+            onUpdateSidebar={items => {}}
+            onUpdateInfoCards={items => dispatch(setInfoCards(items))}
+            onUpdateMenu={items => dispatch(setMenuItems(items))}
+            onUpdateTopBar={c => dispatch(updateSettingsThunk({ key: 'topBarConfig', value: c }))}
+            onUpdateFooter={c => dispatch(updateSettingsThunk({ key: 'footerConfig', value: c }))}
+            onUpdateHomeWidgets={items => {}}
+            onBack={() => navigate('home')}
+          />
+        );
+      default: return <NotFound />;
     }
   };
 
   if (isAuthLoading || isContentLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 flex-col gap-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 gap-4">
         <RefreshCw className="animate-spin text-emerald-600" size={48} />
-        <p className="text-emerald-700 dark:text-emerald-400 font-bold text-lg animate-pulse">BISE Dinajpur Portal</p>
+        <p className="text-sm font-bold text-gray-400 dark:text-gray-600 animate-pulse uppercase tracking-widest">Portal Initializing...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col font-sans text-gray-800 dark:text-gray-200 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col font-sans bg-gray-50 dark:bg-gray-950 transition-colors">
       <TopBar 
-        onNavigate={(page) => handleNavigate(page as PageType)} 
-        isDarkMode={isDarkMode}
-        toggleTheme={toggleTheme}
-        user={user}
-        onLogout={handleLogout}
+        onNavigate={(p) => navigate(p)} 
+        isDarkMode={isDarkMode} 
+        toggleTheme={() => setIsDarkMode(!isDarkMode)}
+        user={user} 
+        onLogout={() => dispatch(signOutUser())} 
         config={topBarConfig}
       />
       <Header />
       <Navbar 
-        onSearch={(query) => handleNavigate('search', { query })} 
-        menuItems={menuItems}
-        onNavigate={handleMenuNavigation}
+        onSearch={(q) => navigate('search', { q })} 
+        menuItems={menuItems} 
+        onNavigate={(h) => {
+          if (h === 'home') navigate('home');
+          else if (h.startsWith('page:')) navigate('page-viewer', { slug: h.split(':')[1] });
+          else navigate(h);
+        }} 
       />
-      
-      <main className="flex-grow container mx-auto px-4 py-6">
-        {currentPage === 'home' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-8 space-y-6">
-              <HeroSlider items={carouselItems} />
-              <NewsTicker newsItems={news} onNavigateNews={(title) => handleNavigate('news', { title })} onViewAll={() => handleNavigate('all-news')} />
-              <NoticeBoard notices={notices} onNavigateNotice={(id) => handleNavigate('notice', { id })} onViewAll={() => handleNavigate('all-notices')} />
-              <InfoCardsSection cards={infoCards} />
-              {homeWidgets.map(widget => <HomeWidget key={widget.id} config={widget} />)}
-            </div>
-            <div className="lg:col-span-4">
-              <Sidebar sections={sidebarSections} onNavigateChairman={() => handleNavigate('chairman')} />
-            </div>
-          </div>
-        )}
-
-        {currentPage === 'login' && <LoginPage onBack={() => handleNavigate('home')} onRegisterClick={() => handleNavigate('register')} onForgotPasswordClick={() => handleNavigate('forgot-password')} onLogin={(u) => { dispatch(setUser(u)); handleNavigate('home'); }} />}
-        {currentPage === 'register' && <RegisterPage onBack={() => handleNavigate('home')} onLoginClick={() => handleNavigate('login')} onTermsClick={() => handleNavigate('terms')} onPrivacyClick={() => handleNavigate('privacy')} onRegisterSuccess={(u) => { dispatch(setUser(u)); handleNavigate('home'); }} />}
-
-        {currentPage === 'admin-dashboard' && user?.role === 'Admin' && (
-            <AdminDashboard 
-                user={user} notices={notices} news={news} pages={pages} carouselItems={carouselItems} sidebarSections={sidebarSections} infoCards={infoCards} menuItems={menuItems} topBarConfig={topBarConfig} footerConfig={footerConfig} homeWidgets={homeWidgets}
-                onAddNotice={(n) => dispatch(addNoticeThunk(n)).unwrap()}
-                onAddNews={() => {}} // Extend as needed
-                onDeleteNotice={(id) => dispatch(deleteNoticeThunk(id))}
-                onDeleteNews={() => {}} // Extend as needed
-                onUpdatePages={() => {}} // Extend as needed
-                onUpdateCarousel={() => {}} // Extend as needed
-                onUpdateSidebar={() => {}} // Extend as needed
-                onUpdateInfoCards={(c) => dispatch(setInfoCards(c))}
-                onUpdateMenu={(m) => dispatch(setMenuItems(m))}
-                onUpdateTopBar={(c) => dispatch(updateSettingsThunk({ key: 'topBarConfig', value: c }))}
-                onUpdateFooter={(c) => dispatch(updateSettingsThunk({ key: 'footerConfig', value: c }))}
-                onUpdateHomeWidgets={() => {}} // Extend as needed
-                onBack={() => handleNavigate('home')}
-            />
-        )}
-
-        {currentPage === 'page-viewer' && (
-            pages.find(p => p.slug === currentSlug) ? (
-                <DynamicPage page={pages.find(p => p.slug === currentSlug)!} onBack={() => handleNavigate('home')} />
-            ) : <div className="p-8 text-center">Page not found.</div>
-        )}
-
-        {currentPage === 'chairman' && <ChairmanMessagePage onBack={() => handleNavigate('home')} />}
-        {currentPage === 'notice' && <SingleNoticePage noticeId={currentNoticeId} notices={notices} onBack={() => handleNavigate('home')} />}
-        {currentPage === 'news' && <SingleNewsPage newsTitle={currentNewsTitle} onBack={() => handleNavigate('home')} />}
-        {currentPage === 'all-notices' && <AllNoticesPage notices={notices} onBack={() => handleNavigate('home')} onNavigateNotice={(id) => handleNavigate('notice', { id })} />}
-        {currentPage === 'all-news' && <AllNewsPage newsItems={news} onBack={() => handleNavigate('home')} onNavigateNews={(title) => handleNavigate('news', { title })} />}
-        {currentPage === 'search' && <SearchPage query={searchQuery} notices={notices} onBack={() => handleNavigate('home')} onNavigateNotice={(id) => handleNavigate('notice', { id })} />}
+      <main className="flex-grow container mx-auto px-4 py-8">
+        {renderActivePage()}
       </main>
-
       <ChatWidget />
       <Footer config={footerConfig} />
     </div>
   );
 };
+
+const NotFound = () => <div className="text-center py-32"><h2 className="text-4xl font-bold text-gray-300">404</h2><p className="text-gray-500">Page Not Found</p></div>;
+const AccessDenied = () => <div className="text-center py-32"><h2 className="text-4xl font-bold text-red-400">Restricted</h2><p className="text-gray-500">Admin privileges required.</p></div>;
 
 export default App;
