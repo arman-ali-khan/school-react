@@ -42,7 +42,7 @@ const ImageCardSection: React.FC<{ title: string, data: any }> = ({ title, data 
            <div className="w-full overflow-hidden bg-white dark:bg-gray-800 p-1 border border-gray-200 dark:border-gray-700 shadow-sm">
                 <img 
                    src={data.image || "https://via.placeholder.com/300"} 
-                   alt={data.name} 
+                   alt={data.name || "Sidebar image"} 
                    className="w-full h-auto object-cover" 
                 />
            </div>
@@ -52,7 +52,7 @@ const ImageCardSection: React.FC<{ title: string, data: any }> = ({ title, data 
 );
 
 const ImageOnlySection: React.FC<{ data: any }> = ({ data }) => (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 h-96 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden transition-colors p-3">
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm overflow-hidden transition-colors p-3">
         <div className="w-full overflow-hidden bg-white dark:bg-gray-800 p-1 border border-gray-200 dark:border-gray-700 shadow-sm">
             <img 
                src={data.image || "https://via.placeholder.com/300"} 

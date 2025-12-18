@@ -97,21 +97,21 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-10">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen pb-10 transition-colors">
       <div className="bg-emerald-900 text-white p-4 shadow-md sticky top-0 z-50">
         <div className="container mx-auto flex justify-between items-center">
             <div className="flex items-center gap-2">
                 <LayoutDashboard size={24} />
                 <h1 className="text-xl font-bold">Admin Dashboard</h1>
             </div>
-            <button onClick={onBack} className="text-sm bg-emerald-800 hover:bg-emerald-700 px-3 py-1 rounded flex items-center gap-1">
+            <button onClick={onBack} className="text-sm bg-emerald-800 hover:bg-emerald-700 px-3 py-1 rounded flex items-center gap-1 transition-colors">
                 <ArrowLeft size={14} /> Back to Site
             </button>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row gap-6">
-        <div className="w-full md:w-64 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 h-fit shrink-0">
+        <div className="w-full md:w-64 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 h-fit shrink-0 overflow-hidden">
             <nav className="p-2 space-y-1">
                 {[
                     { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
@@ -121,6 +121,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     { id: 'sidebar', icon: Menu, label: 'Sidebar sections' },
                     { id: 'infocards', icon: Image, label: 'Info Cards' },
                     { id: 'homepage', icon: Settings, label: 'Home Widgets' },
+                    { id: 'settings', icon: Globe, label: 'Portal Config' },
                 ].map((item) => (
                     <button 
                         key={item.id}
@@ -160,9 +161,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {activeTab === 'notices' && (
                 <div className="space-y-6">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-white">Notice Management</h2>
-                    </div>
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Notice Management</h2>
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700 shadow-sm">
                         <h3 className="font-bold mb-4 flex items-center gap-2"><Plus size={18} className="text-emerald-600" /> New Notice</h3>
                         <form onSubmit={handleNoticeSubmit} className="space-y-4">
@@ -199,9 +198,42 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
             )}
 
+            {activeTab === 'news' && (
+                <div className="space-y-6">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">News Ticker Management</h2>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700 shadow-sm">
+                        <h3 className="font-bold mb-4 flex items-center gap-2 text-blue-600"><Plus size={18} /> Add Headline</h3>
+                        <form onSubmit={handleNewsSubmit} className="space-y-4">
+                            <input type="text" value={newsTitle} onChange={e=>setNewsTitle(e.target.value)} className="w-full p-2.5 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Short headline for ticker" required />
+                            <textarea value={newsContent} onChange={e=>setNewsContent(e.target.value)} className="w-full h-24 p-2.5 border rounded text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="Full story content" />
+                            <button type="submit" disabled={isNewsPublishing} className="bg-blue-700 text-white px-6 py-2 rounded font-bold hover:bg-blue-800 disabled:opacity-50 transition-colors">
+                                {isNewsPublishing ? 'Publishing...' : 'Add News Item'}
+                            </button>
+                        </form>
+                    </div>
+                    <div className="bg-white dark:bg-gray-800 rounded border dark:border-gray-700 overflow-hidden shadow-sm">
+                        <div className="bg-gray-50 dark:bg-gray-700 p-3 border-b dark:border-gray-600 font-bold text-xs uppercase text-gray-500">Active News Items</div>
+                        <ul className="divide-y dark:divide-gray-700">
+                            {news.map(n => (
+                                <li key={n.id} className="p-4 flex justify-between items-center hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-blue-50 dark:bg-blue-900/30 p-2 rounded text-blue-700 dark:text-blue-400"><Newspaper size={18}/></div>
+                                        <div>
+                                            <p className="font-bold text-sm dark:text-white">{n.title}</p>
+                                            <p className="text-xs text-gray-400">{n.date}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={()=>onDeleteNews(n.id)} className="text-red-400 hover:text-red-600 p-2"><Trash2 size={18}/></button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            )}
+
             {activeTab === 'sidebar' && (
                 <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Sidebar Configuration</h2>
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Sidebar Layout</h2>
                     <div className="bg-white dark:bg-gray-800 rounded border dark:border-gray-700 shadow-sm overflow-hidden">
                         <ul className="divide-y dark:divide-gray-700">
                             {sidebarSections.map(s => (
@@ -212,10 +244,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                             {s.type === 'list' && <Link size={18}/>}
                                             {s.type === 'hotlines' && <Phone size={18}/>}
                                             {s.type === 'audio' && <Headphones size={18}/>}
+                                            {s.type === 'map' && <MapPin size={18}/>}
+                                            {s.type === 'video' && <Video size={18}/>}
+                                            {s.type === 'image_card' && <Image size={18}/>}
+                                            {s.type === 'image_only' && <Image size={18}/>}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-sm dark:text-white">{s.title}</p>
-                                            <p className="text-xs text-gray-400">Type: {s.type}</p>
+                                            <p className="font-bold text-sm dark:text-white">{s.title || '(Image Only)'}</p>
+                                            <p className="text-xs text-gray-400 uppercase tracking-tighter font-bold">Type: {s.type}</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-2">
@@ -225,8 +261,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                 </li>
                             ))}
                         </ul>
-                        <button className="w-full p-3 bg-gray-50 dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-emerald-50 transition-colors">
-                            <Plus size={16} /> Add Sidebar Section
+                        <button className="w-full p-4 bg-gray-50 dark:bg-gray-700 text-emerald-600 dark:text-emerald-400 font-bold text-sm flex items-center justify-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                            <Plus size={16} /> Add Sidebar Widget
                         </button>
                     </div>
                 </div>
@@ -234,10 +270,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             {activeTab === 'homepage' && (
                 <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Homepage Widgets</h2>
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Homepage Content</h2>
                     <div className="grid grid-cols-1 gap-4">
                         {homeWidgets.map(w => (
-                            <div key={w.id} className="bg-white dark:bg-gray-800 p-4 rounded border dark:border-gray-700 flex justify-between items-center">
+                            <div key={w.id} className="bg-white dark:bg-gray-800 p-4 rounded border dark:border-gray-700 flex justify-between items-center shadow-sm">
                                 <div className="flex items-center gap-4">
                                     <div className="bg-orange-50 dark:bg-orange-900/30 p-3 rounded-lg text-orange-600">
                                         {w.type === 'youtube' && <Video size={20}/>}
@@ -256,17 +292,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         ))}
                     </div>
                     <button className="w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg text-gray-400 hover:text-emerald-600 hover:border-emerald-600 transition-all font-bold flex items-center justify-center gap-2">
-                        <Plus size={20} /> Add New Homepage Widget
+                        <Plus size={20} /> Add Homepage Widget
                     </button>
                 </div>
             )}
 
             {activeTab === 'infocards' && (
                 <div className="space-y-6">
-                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Info Cards (Icons)</h2>
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Info Cards (Grid Icons)</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {infoCards.map(c => (
-                            <div key={c.id} className="bg-white dark:bg-gray-800 p-4 rounded border dark:border-gray-700 shadow-sm flex flex-col">
+                            <div key={c.id} className="bg-white dark:bg-gray-800 p-4 rounded border dark:border-gray-700 shadow-sm flex flex-col transition-all hover:border-emerald-200">
                                 <div className="flex justify-between items-start mb-2">
                                     <h4 className="font-bold text-sm dark:text-white">{c.title}</h4>
                                     <div className="flex gap-1">
@@ -274,12 +310,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                                         <button className="text-red-300 hover:text-red-600 p-1"><Trash2 size={14}/></button>
                                     </div>
                                 </div>
-                                <div className="text-xs text-gray-400 mb-3 italic">Icon: {c.iconName}</div>
+                                <div className="text-[10px] text-gray-400 mb-3 italic font-bold uppercase">Icon Key: {c.iconName}</div>
                                 <ul className="space-y-1">
-                                    {c.links.map((l, i) => <li key={i} className="text-xs text-emerald-600">• {l.text}</li>)}
+                                    {c.links.map((l, i) => <li key={i} className="text-xs text-emerald-600 dark:text-emerald-400">• {l.text}</li>)}
                                 </ul>
                             </div>
                         ))}
+                    </div>
+                    <button className="p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded font-bold text-xs text-gray-500 hover:text-emerald-600 transition-colors">
+                        Add New Info Card
+                    </button>
+                </div>
+            )}
+            
+            {activeTab === 'settings' && (
+                <div className="space-y-6">
+                    <h2 className="text-xl font-bold text-gray-800 dark:text-white">Portal Configuration</h2>
+                    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700 shadow-sm space-y-6">
+                        <div>
+                            <h3 className="font-bold text-emerald-800 dark:text-emerald-400 mb-4 flex items-center gap-2"><Globe size={18}/> Top Bar Config</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input type="text" value={topBarConfig.phone} onChange={e=>onUpdateTopBar({...topBarConfig, phone: e.target.value})} className="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" placeholder="Support Phone" />
+                                <input type="text" value={topBarConfig.email} onChange={e=>onUpdateTopBar({...topBarConfig, email: e.target.value})} className="p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" placeholder="Contact Email" />
+                            </div>
+                        </div>
+                        <div className="pt-6 border-t dark:border-gray-700">
+                             <h3 className="font-bold text-emerald-800 dark:text-emerald-400 mb-4 flex items-center gap-2"><MapPin size={18}/> Footer Config</h3>
+                             <textarea value={footerConfig.address} onChange={e=>onUpdateFooter({...footerConfig, address: e.target.value})} className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm mb-4 h-24" placeholder="Full Office Address" />
+                             <input type="text" value={footerConfig.copyrightText} onChange={e=>onUpdateFooter({...footerConfig, copyrightText: e.target.value})} className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm" placeholder="Copyright text" />
+                        </div>
                     </div>
                 </div>
             )}

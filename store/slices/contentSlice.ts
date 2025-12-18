@@ -61,20 +61,29 @@ export const fetchAllContent = createAsyncThunk('content/fetchAll', async () => 
 
 export const addNoticeThunk = createAsyncThunk('content/addNotice', async (notice: Notice, { rejectWithValue }) => {
   const { data, error } = await supabase.from('notices').insert([notice]).select().single();
-  if (error) {
-    const errorString = error.message || JSON.stringify(error);
-    return rejectWithValue(errorString);
-  }
+  if (error) return rejectWithValue(error.message);
   return data as Notice;
 });
 
 export const addNewsThunk = createAsyncThunk('content/addNews', async (newsItem: NewsItem, { rejectWithValue }) => {
   const { data, error } = await supabase.from('news_items').insert([newsItem]).select().single();
-  if (error) {
-    const errorString = error.message || JSON.stringify(error);
-    return rejectWithValue(errorString);
-  }
+  if (error) return rejectWithValue(error.message);
   return data as NewsItem;
+});
+
+export const updateSidebarThunk = createAsyncThunk('content/updateSidebar', async (sections: SidebarSection[]) => {
+    // Delete all and re-insert to maintain order and simplicity in this POC
+    await supabase.from('sidebar_sections').delete().neq('id', '0');
+    const { data, error } = await supabase.from('sidebar_sections').insert(sections).select();
+    if (error) throw error;
+    return data as SidebarSection[];
+});
+
+export const updateHomeWidgetsThunk = createAsyncThunk('content/updateHomeWidgets', async (widgets: HomeWidgetConfig[]) => {
+    await supabase.from('home_widgets').delete().neq('id', '0');
+    const { data, error } = await supabase.from('home_widgets').insert(widgets).select();
+    if (error) throw error;
+    return data as HomeWidgetConfig[];
 });
 
 export const deleteNoticeThunk = createAsyncThunk('content/deleteNotice', async (id: string) => {
@@ -101,6 +110,8 @@ const contentSlice = createSlice({
   reducers: {
     setMenuItems: (state, action: PayloadAction<MenuItem[]>) => { state.menuItems = action.payload; },
     setInfoCards: (state, action: PayloadAction<InfoCard[]>) => { state.infoCards = action.payload; },
+    setSidebarSections: (state, action: PayloadAction<SidebarSection[]>) => { state.sidebarSections = action.payload; },
+    setHomeWidgets: (state, action: PayloadAction<HomeWidgetConfig[]>) => { state.homeWidgets = action.payload; },
   },
   extraReducers: (builder) => {
     builder
@@ -119,6 +130,12 @@ const contentSlice = createSlice({
       .addCase(addNewsThunk.fulfilled, (state, action) => {
         state.news.unshift(action.payload);
       })
+      .addCase(updateSidebarThunk.fulfilled, (state, action) => {
+        state.sidebarSections = action.payload;
+      })
+      .addCase(updateHomeWidgetsThunk.fulfilled, (state, action) => {
+        state.homeWidgets = action.payload;
+      })
       .addCase(deleteNoticeThunk.fulfilled, (state, action) => {
         state.notices = state.notices.filter(n => n.id !== action.payload);
       })
@@ -132,5 +149,5 @@ const contentSlice = createSlice({
   },
 });
 
-export const { setMenuItems, setInfoCards } = contentSlice.actions;
+export const { setMenuItems, setInfoCards, setSidebarSections, setHomeWidgets } = contentSlice.actions;
 export default contentSlice.reducer;

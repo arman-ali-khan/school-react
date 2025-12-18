@@ -11,6 +11,8 @@ import {
   deleteNoticeThunk, 
   deleteNewsThunk, 
   updateSettingsThunk, 
+  updateSidebarThunk,
+  updateHomeWidgetsThunk,
   setMenuItems, 
   setInfoCards 
 } from './store/slices/contentSlice';
@@ -46,7 +48,8 @@ import AdminDashboard from './pages/AdminDashboard';
 import DynamicPage from './pages/DynamicPage';
 
 const App: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
+  // Fix: Cast dispatch to any to resolve TypeScript errors with AsyncThunkAction and allow unwrap() calls on the returned result.
+  const dispatch = useDispatch<AppDispatch>() as any;
   const { user, isLoading: isAuthLoading } = useSelector((state: RootState) => state.auth);
   const { 
     notices, news, pages, carouselItems, sidebarSections, 
@@ -156,12 +159,12 @@ const App: React.FC = () => {
             onDeleteNews={(id) => dispatch(deleteNewsThunk(id))}
             onUpdatePages={items => {}}
             onUpdateCarousel={items => {}}
-            onUpdateSidebar={items => {}}
+            onUpdateSidebar={items => dispatch(updateSidebarThunk(items))}
             onUpdateInfoCards={items => dispatch(setInfoCards(items))}
             onUpdateMenu={items => dispatch(setMenuItems(items))}
             onUpdateTopBar={c => dispatch(updateSettingsThunk({ key: 'topBarConfig', value: c }))}
             onUpdateFooter={c => dispatch(updateSettingsThunk({ key: 'footerConfig', value: c }))}
-            onUpdateHomeWidgets={items => {}}
+            onUpdateHomeWidgets={items => dispatch(updateHomeWidgetsThunk(items))}
             onBack={() => navigate('home')}
           />
         );
