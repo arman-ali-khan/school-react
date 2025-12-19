@@ -51,7 +51,6 @@ export interface CarouselItem {
   caption: string;
 }
 
-// Added SidebarLink interface for navigation items in sidebar
 export interface SidebarLink {
   label: string;
   href: string;
@@ -60,7 +59,6 @@ export interface SidebarLink {
   badge?: string;
 }
 
-// Added SidebarHotline interface for contact items in sidebar
 export interface SidebarHotline {
   title: string;
   number: string;
@@ -117,6 +115,13 @@ export interface SEOMeta {
   description: string;
   keywords: string;
   author: string;
+}
+
+export interface VisitorStats {
+  today: number;
+  yesterday: number;
+  month: number;
+  total: number;
 }
 
 export type HomeWidgetType = 'youtube' | 'map' | 'image' | 'video';

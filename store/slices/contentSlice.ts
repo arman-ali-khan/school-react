@@ -1,7 +1,7 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { supabase } from '../../services/supabase';
-import { Notice, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, TopBarConfig, FooterConfig, HomeWidgetConfig, NewsItem, SchoolInfo, SEOMeta } from '../../types';
+import { Notice, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, TopBarConfig, FooterConfig, HomeWidgetConfig, NewsItem, SchoolInfo, SEOMeta, VisitorStats } from '../../types';
 import { NOTICES, NEWS_ITEMS, INITIAL_PAGES, CAROUSEL_ITEMS, SIDEBAR_SECTIONS, INFO_CARDS, MAIN_MENU, DEFAULT_TOPBAR_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HOME_WIDGETS } from '../../constants';
 
 interface ContentState {
@@ -17,6 +17,7 @@ interface ContentState {
   homeWidgets: HomeWidgetConfig[];
   schoolInfo: SchoolInfo;
   seoMeta: SEOMeta;
+  visitorStats: VisitorStats;
   isLoading: boolean;
   error: string | null;
 }
@@ -47,11 +48,48 @@ const initialState: ContentState = {
     keywords: "education, board, dinajpur, results, notices",
     author: "BISE Engineering"
   },
+  visitorStats: {
+    today: 0,
+    yesterday: 0,
+    month: 0,
+    total: 0
+  },
   isLoading: true,
   error: null,
 };
 
-export const fetchAllContent = createAsyncThunk('content/fetchAll', async () => {
+export const fetchVisitorStats = createAsyncThunk('content/fetchVisitorStats', async () => {
+  const today = new Date().toISOString().split('T')[0];
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = yesterdayDate.toISOString().split('T')[0];
+  
+  const firstDayOfMonth = new Date();
+  firstDayOfMonth.setDate(1);
+  const monthStart = firstDayOfMonth.toISOString().split('T')[0];
+
+  const { data } = await supabase.from('visitor_counts').select('*');
+  
+  if (!data) return initialState.visitorStats;
+
+  const stats = {
+    today: data.find(d => d.date === today)?.count || 0,
+    yesterday: data.find(d => d.date === yesterday)?.count || 0,
+    month: data.filter(d => d.date >= monthStart).reduce((acc, curr) => acc + Number(curr.count), 0),
+    total: data.reduce((acc, curr) => acc + Number(curr.count), 0)
+  };
+
+  return stats;
+});
+
+export const incrementVisit = createAsyncThunk('content/incrementVisit', async (_, { dispatch }) => {
+  await supabase.rpc('increment_visitor_count');
+  dispatch(fetchVisitorStats());
+});
+
+export const fetchAllContent = createAsyncThunk('content/fetchAll', async (_, { dispatch }) => {
+  dispatch(fetchVisitorStats());
+  
   const results = await Promise.allSettled([
     supabase.from('notices').select('*').order('date', { ascending: false }),
     supabase.from('news_items').select('*').order('date', { ascending: false }),
@@ -202,6 +240,9 @@ const contentSlice = createSlice({
       .addCase(fetchAllContent.fulfilled, (state, action) => {
         Object.assign(state, action.payload);
         state.isLoading = false;
+      })
+      .addCase(fetchVisitorStats.fulfilled, (state, action) => {
+        state.visitorStats = action.payload;
       })
       .addCase(addNoticeThunk.fulfilled, (state, action) => { state.notices.unshift(action.payload); })
       .addCase(updateNoticeThunk.fulfilled, (state, action) => { state.notices = state.notices.map(n => n.id === action.payload.id ? action.payload : n); })

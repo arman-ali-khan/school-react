@@ -17,6 +17,7 @@ import {
   updateSidebarThunk,
   updateInfoCardsThunk,
   updateHomeWidgetsThunk,
+  incrementVisit,
   setMenuItems, 
   setInfoCards 
 } from './store/slices/contentSlice';
@@ -82,6 +83,7 @@ const App: React.FC = () => {
   useEffect(() => {
     dispatch(restoreSession());
     dispatch(fetchAllContent());
+    dispatch(incrementVisit());
     
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');

@@ -2,12 +2,20 @@
 import React from 'react';
 import { MapPin, Phone, Mail } from 'lucide-react';
 import { FooterConfig } from '../../types';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
 interface FooterProps {
     config: FooterConfig;
 }
 
 const Footer: React.FC<FooterProps> = ({ config }) => {
+  const { visitorStats } = useSelector((state: RootState) => state.content);
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('en-US').format(num);
+  };
+
   return (
     <footer className="mt-12 text-sm print:hidden">
       <div className="w-full flex border-b-[15px] border-[#737272] justify-between sm:px-12 relative z-10 -mb-1">
@@ -59,19 +67,19 @@ const Footer: React.FC<FooterProps> = ({ config }) => {
               <div className="space-y-2 font-mono text-xs">
                   <div className="flex justify-between border-b border-emerald-800/50 pb-1">
                       <span>Today:</span>
-                      <span className="text-emerald-300">14,205</span>
+                      <span className="text-emerald-300">{formatNumber(visitorStats.today)}</span>
                   </div>
                   <div className="flex justify-between border-b border-emerald-800/50 pb-1">
                       <span>Yesterday:</span>
-                      <span className="text-emerald-300">25,890</span>
+                      <span className="text-emerald-300">{formatNumber(visitorStats.yesterday)}</span>
                   </div>
                   <div className="flex justify-between border-b border-emerald-800/50 pb-1">
                       <span>This Month:</span>
-                      <span className="text-emerald-300">452,100</span>
+                      <span className="text-emerald-300">{formatNumber(visitorStats.month)}</span>
                   </div>
                   <div className="flex justify-between pt-1">
                       <span className="font-bold text-white">Total:</span>
-                      <span className="font-bold text-emerald-300">89,120,453</span>
+                      <span className="font-bold text-emerald-300">{formatNumber(visitorStats.total)}</span>
                   </div>
               </div>
           </div>
