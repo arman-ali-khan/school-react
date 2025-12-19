@@ -46,7 +46,10 @@ const initialState: ContentState = {
     title: "Dinajpur Education Board Portal",
     description: "Official portal for Dinajpur Education Board",
     keywords: "education, board, dinajpur, results, notices",
-    author: "BISE Engineering"
+    author: "BISE Engineering",
+    aiModel: "gemini-3-flash-preview",
+    aiSystemInstruction: "You are the Virtual Assistant for the Board of Intermediate and Secondary Education, Dinajpur. Be helpful and professional.",
+    aiWelcomeMessage: "স্বাগতম! আমি আপনাকে কীভাবে সাহায্য করতে পারি?"
   },
   visitorStats: {
     today: 0,

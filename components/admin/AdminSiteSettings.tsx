@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Save, Globe, Info, Search, Phone, RefreshCw, Plus, Trash2, 
   Link as LinkIcon, Mail, Upload, X, ImageIcon, 
-  GraduationCap, School, Book, Library, Award, Shield, Building, Users, CheckCircle, FileText
+  GraduationCap, School, Book, Library, Award, Shield, Building, Users, CheckCircle, FileText,
+  BarChart, Share2, Tag, User as UserIcon, Bot, MessageSquareText, Sparkles
 } from 'lucide-react';
 import { TopBarConfig, FooterConfig, SchoolInfo, SEOMeta } from '../../types';
 
@@ -43,7 +44,10 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
   const [localFooter, setLocalFooter] = useState<FooterConfig>(footer);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingSEOImage, setIsUploadingSEOImage] = useState(false);
+  
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const seoImageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setLocalSchool(school); }, [school]);
   useEffect(() => { setLocalTopBar(topBar); }, [topBar]);
@@ -63,11 +67,13 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
     }
   };
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'logo' | 'seo') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploadingLogo(true);
+    if (target === 'logo') setIsUploadingLogo(true);
+    else setIsUploadingSEOImage(true);
+
     const formData = new FormData();
     formData.append('file', file);
     formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
@@ -79,13 +85,18 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
       });
       const data = await response.json();
       if (data.secure_url) {
-        setLocalSchool({ ...localSchool, logoUrl: data.secure_url });
+        if (target === 'logo') {
+          setLocalSchool({ ...localSchool, logoUrl: data.secure_url });
+        } else {
+          setLocalSEO({ ...localSEO, ogImageUrl: data.secure_url });
+        }
       }
     } catch (err) {
       console.error(err);
-      alert('Logo upload failed.');
+      alert('Upload failed.');
     } finally {
       setIsUploadingLogo(false);
+      setIsUploadingSEOImage(false);
     }
   };
 
@@ -136,7 +147,6 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
         <SectionHeader icon={Info} title="Board Identification" />
         
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-6">
-          {/* Logo / Icon Picker */}
           <div className="space-y-4">
             <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Board Brand (Logo/Icon)</label>
             <div 
@@ -158,7 +168,7 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
                   <p className="text-[10px] font-bold text-gray-400 uppercase">Upload Logo</p>
                 </div>
               )}
-              <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
+              <input type="file" ref={logoInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'logo')} accept="image/*" />
             </div>
             
             <div className="space-y-2">
@@ -167,6 +177,7 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
                 {ICON_OPTIONS.map(opt => (
                   <button 
                     key={opt.name}
+                    type="button"
                     onClick={() => setLocalSchool({ ...localSchool, iconName: opt.name, logoUrl: '' })}
                     className={`p-2 rounded-lg border transition-all flex items-center justify-center ${localSchool.iconName === opt.name && !localSchool.logoUrl ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-gray-50 dark:bg-gray-900 text-gray-400 border-transparent hover:border-emerald-200'}`}
                   >
@@ -204,6 +215,103 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
         <SaveButton section="School Info" onClick={() => handleSave('School Info', () => onUpdateSchool(localSchool))} />
       </section>
 
+      {/* Gemini AI Assistant Config */}
+      <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
+        <SectionHeader icon={Bot} title="Gemini AI Assistant Configuration" />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+          <div className="space-y-4">
+             <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Sparkles size={10}/> AI Model ID</label>
+              <input type="text" value={localSEO.aiModel || ''} onChange={e=>setLocalSEO({...localSEO, aiModel: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500" placeholder="gemini-3-flash-preview" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><MessageSquareText size={10}/> Dynamic Welcome Message</label>
+              <textarea value={localSEO.aiWelcomeMessage || ''} onChange={e=>setLocalSEO({...localSEO, aiWelcomeMessage: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm h-24 focus:ring-2 focus:ring-emerald-500 resize-none" placeholder="Message shown when chat opens..." />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><UserIcon size={10}/> Assistant Persona (System Instruction)</label>
+            <textarea value={localSEO.aiSystemInstruction || ''} onChange={e=>setLocalSEO({...localSEO, aiSystemInstruction: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm h-full min-h-[160px] focus:ring-2 focus:ring-emerald-500 resize-none" placeholder="Instructions that define how the AI acts..." />
+          </div>
+        </div>
+        <SaveButton section="AI Config" onClick={() => handleSave('AI Config', () => onUpdateSEO(localSEO))} />
+      </section>
+
+      {/* SEO Meta & Configuration Manager */}
+      <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
+        <SectionHeader icon={Search} title="SEO Configuration Manager" />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+          {/* Left Column: Basic Tags */}
+          <div className="space-y-4">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Globe size={10}/> Browser Tab Title</label>
+              <input type="text" value={localSEO.title} onChange={e=>setLocalSEO({...localSEO, title: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" placeholder="e.g. Board of Dinajpur | Official Portal" />
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><FileText size={10}/> Meta Description (Search Snippet)</label>
+              <textarea value={localSEO.description} onChange={e=>setLocalSEO({...localSEO, description: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm h-24 focus:ring-2 focus:ring-emerald-500 resize-none" placeholder="Briefly describe the site for Google results..." />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><UserIcon size={10}/> Site Author</label>
+                <input type="text" value={localSEO.author} onChange={e=>setLocalSEO({...localSEO, author: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" placeholder="e.g. BISE Team" />
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><BarChart size={10}/> Google Analytics G-ID</label>
+                <input type="text" value={localSEO.googleAnalyticsId || ''} onChange={e=>setLocalSEO({...localSEO, googleAnalyticsId: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500" placeholder="G-XXXXXXXXXX" />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Tag size={10}/> Meta Keywords (Comma Separated)</label>
+              <input type="text" value={localSEO.keywords} onChange={e=>setLocalSEO({...localSEO, keywords: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" placeholder="board, results, education, dinajpur..." />
+            </div>
+          </div>
+
+          {/* Right Column: Social Media Preview */}
+          <div className="space-y-4">
+            <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Share2 size={10}/> Social Share Preview (OG Image)</label>
+            <div 
+              onClick={() => seoImageInputRef.current?.click()}
+              className={`h-48 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group ${localSEO.ogImageUrl ? 'border-emerald-500' : 'border-gray-200 dark:border-gray-700 hover:border-emerald-400'}`}
+            >
+              {isUploadingSEOImage ? (
+                <RefreshCw className="animate-spin text-emerald-500" />
+              ) : localSEO.ogImageUrl ? (
+                <div className="w-full h-full relative group">
+                  <img src={localSEO.ogImageUrl} className="w-full h-full object-cover" alt="Social Preview" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <X className="text-white" size={24} onClick={(e) => { e.stopPropagation(); setLocalSEO({...localSEO, ogImageUrl: ''}); }} />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center p-4">
+                  <ImageIcon className="mx-auto text-gray-300 mb-2" size={32} />
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Upload OG Image (1200x630)</p>
+                  <p className="text-[9px] text-gray-400 mt-1">Recommended for Facebook/Twitter previews</p>
+                </div>
+              )}
+              <input type="file" ref={seoImageInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'seo')} accept="image/*" />
+            </div>
+            
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
+               <h4 className="text-[10px] font-black text-blue-700 dark:text-blue-400 uppercase mb-2 flex items-center gap-1"><Info size={12}/> SEO Best Practices</h4>
+               <ul className="text-[10px] text-blue-600 dark:text-blue-300 space-y-1 list-disc pl-4">
+                 <li>Keep Titles between 50-60 characters.</li>
+                 <li>Descriptions should be under 160 characters.</li>
+                 <li>Author name helps with E-E-A-T score.</li>
+                 <li>OG Image ensures professional sharing on Social Media.</li>
+               </ul>
+            </div>
+          </div>
+        </div>
+        
+        <SaveButton section="SEO Meta" onClick={() => handleSave('SEO Meta', () => onUpdateSEO(localSEO))} />
+      </section>
+
       {/* Top Bar Config */}
       <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
         <SectionHeader icon={Phone} title="Global Contact & Nav" />
@@ -228,26 +336,6 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
           </div>
         </div>
         <SaveButton section="Top Bar" onClick={() => handleSave('Top Bar', () => onUpdateTopBar(localTopBar))} />
-      </section>
-
-      {/* SEO Meta */}
-      <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
-        <SectionHeader icon={Search} title="Search Engine Presence" />
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Site Title</label>
-            <input type="text" value={localSEO.title} onChange={e=>setLocalSEO({...localSEO, title: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Description</label>
-            <textarea value={localSEO.description} onChange={e=>setLocalSEO({...localSEO, description: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm h-20 focus:ring-2 focus:ring-emerald-500 resize-none" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Keywords (Comma separated)</label>
-            <input type="text" value={localSEO.keywords} onChange={e=>setLocalSEO({...localSEO, keywords: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
-          </div>
-        </div>
-        <SaveButton section="SEO Meta" onClick={() => handleSave('SEO Meta', () => onUpdateSEO(localSEO))} />
       </section>
 
       {/* Footer Config */}

@@ -115,6 +115,12 @@ export interface SEOMeta {
   description: string;
   keywords: string;
   author: string;
+  googleAnalyticsId?: string;
+  ogImageUrl?: string;
+  // Gemini AI Dynamic Config
+  aiSystemInstruction?: string;
+  aiModel?: string;
+  aiWelcomeMessage?: string;
 }
 
 export interface VisitorStats {
