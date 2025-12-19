@@ -1,6 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { Save, Globe, Info, Search, Phone, RefreshCw, Plus, Trash2, Link as LinkIcon, Mail } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Save, Globe, Info, Search, Phone, RefreshCw, Plus, Trash2, 
+  Link as LinkIcon, Mail, Upload, X, ImageIcon, 
+  GraduationCap, School, Book, Library, Award, Shield, Building, Users, CheckCircle, FileText
+} from 'lucide-react';
 import { TopBarConfig, FooterConfig, SchoolInfo, SEOMeta } from '../../types';
 
 interface AdminSiteSettingsProps {
@@ -14,6 +18,22 @@ interface AdminSiteSettingsProps {
   onUpdateSEO: (s: SEOMeta) => Promise<any>;
 }
 
+const ICON_OPTIONS = [
+  { name: 'GraduationCap', icon: GraduationCap },
+  { name: 'School', icon: School },
+  { name: 'Book', icon: Book },
+  { name: 'Library', icon: Library },
+  { name: 'Award', icon: Award },
+  { name: 'Shield', icon: Shield },
+  { name: 'Building', icon: Building },
+  { name: 'Users', icon: Users },
+  { name: 'CheckCircle', icon: CheckCircle },
+  { name: 'FileText', icon: FileText }
+];
+
+const CLOUDINARY_UPLOAD_PRESET = "school"; 
+const CLOUDINARY_CLOUD_NAME = "dgituybrt";
+
 const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({ 
   topBar, footer, school, seo, onUpdateTopBar, onUpdateFooter, onUpdateSchool, onUpdateSEO 
 }) => {
@@ -22,6 +42,8 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
   const [localSEO, setLocalSEO] = useState<SEOMeta>(seo);
   const [localFooter, setLocalFooter] = useState<FooterConfig>(footer);
   const [saving, setSaving] = useState<Record<string, boolean>>({});
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { setLocalSchool(school); }, [school]);
   useEffect(() => { setLocalTopBar(topBar); }, [topBar]);
@@ -38,6 +60,32 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
       alert(`Failed to save ${section}.`);
     } finally {
       setSaving(prev => ({ ...prev, [section]: false }));
+    }
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingLogo(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+    try {
+      const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.secure_url) {
+        setLocalSchool({ ...localSchool, logoUrl: data.secure_url });
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Logo upload failed.');
+    } finally {
+      setIsUploadingLogo(false);
     }
   };
 
@@ -86,24 +134,73 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
       {/* School Info */}
       <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
         <SectionHeader icon={Info} title="Board Identification" />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Board/School Name</label>
-            <input type="text" value={localSchool.name} onChange={e=>setLocalSchool({...localSchool, name: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-6">
+          {/* Logo / Icon Picker */}
+          <div className="space-y-4">
+            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Board Brand (Logo/Icon)</label>
+            <div 
+              onClick={() => logoInputRef.current?.click()}
+              className={`h-40 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all relative overflow-hidden group ${localSchool.logoUrl ? 'border-emerald-500' : 'border-gray-200 dark:border-gray-700 hover:border-emerald-400'}`}
+            >
+              {isUploadingLogo ? (
+                <RefreshCw className="animate-spin text-emerald-500" />
+              ) : localSchool.logoUrl ? (
+                <div className="w-full h-full relative group">
+                  <img src={localSchool.logoUrl} className="w-full h-full object-contain p-4" alt="Logo Preview" />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <X className="text-white" size={24} onClick={(e) => { e.stopPropagation(); setLocalSchool({...localSchool, logoUrl: ''}); }} />
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center p-4">
+                  <Upload className="mx-auto text-gray-300 mb-2" size={24} />
+                  <p className="text-[10px] font-bold text-gray-400 uppercase">Upload Logo</p>
+                </div>
+              )}
+              <input type="file" ref={logoInputRef} className="hidden" onChange={handleLogoUpload} accept="image/*" />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-[9px] font-bold text-gray-400 uppercase">Or Select System Icon</label>
+              <div className="grid grid-cols-5 gap-2">
+                {ICON_OPTIONS.map(opt => (
+                  <button 
+                    key={opt.name}
+                    onClick={() => setLocalSchool({ ...localSchool, iconName: opt.name, logoUrl: '' })}
+                    className={`p-2 rounded-lg border transition-all flex items-center justify-center ${localSchool.iconName === opt.name && !localSchool.logoUrl ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-gray-50 dark:bg-gray-900 text-gray-400 border-transparent hover:border-emerald-200'}`}
+                  >
+                    <opt.icon size={16} />
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Location Title</label>
-            <input type="text" value={localSchool.title} onChange={e=>setLocalSchool({...localSchool, title: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">EIIN</label>
-            <input type="text" value={localSchool.eiin} onChange={e=>setLocalSchool({...localSchool, eiin: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase">Board Code</label>
-            <input type="text" value={localSchool.code} onChange={e=>setLocalSchool({...localSchool, code: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+
+          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Board/School Name</label>
+              <input type="text" value={localSchool.name} onChange={e=>setLocalSchool({...localSchool, name: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Location Title</label>
+              <input type="text" value={localSchool.title} onChange={e=>setLocalSchool({...localSchool, title: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">EIIN</label>
+              <input type="text" value={localSchool.eiin} onChange={e=>setLocalSchool({...localSchool, eiin: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Board Code</label>
+              <input type="text" value={localSchool.code} onChange={e=>setLocalSchool({...localSchool, code: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+            </div>
+            <div className="md:col-span-2 space-y-1">
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Header Address Line</label>
+              <input type="text" value={localSchool.address} onChange={e=>setLocalSchool({...localSchool, address: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
+            </div>
           </div>
         </div>
+        
         <SaveButton section="School Info" onClick={() => handleSave('School Info', () => onUpdateSchool(localSchool))} />
       </section>
 

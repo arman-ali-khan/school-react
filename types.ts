@@ -105,6 +105,7 @@ export interface SchoolInfo {
   name: string;
   title: string;
   logoUrl: string;
+  iconName?: string;
   address: string;
   hotline: string;
   eiin: string;
