@@ -1,30 +1,42 @@
 
 import React from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '../../store';
 
 const Header: React.FC = () => {
+  const { schoolInfo } = useSelector((state: RootState) => state.content);
+
   return (
     <header className="bg-white dark:bg-gray-900 py-6 shadow-sm transition-colors border-b dark:border-gray-800">
       <div className="container mx-auto px-4 flex flex-col md:flex-row items-center gap-6">
         <div className="w-20 h-20 md:w-24 md:h-24 flex-shrink-0">
-          <div className="w-full h-full rounded-full bg-emerald-700 flex items-center justify-center text-white border-4 border-emerald-50 dark:border-gray-800 shadow-xl">
-             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-12 h-12"><path d="M22 10v6M2 10v6"/><path d="M2 16h20"/><path d="M12 22v-6"/><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m22 7-10 5-10-5"/></svg>
+          <div className="w-full h-full rounded-full bg-emerald-700 flex items-center justify-center text-white border-4 border-emerald-50 dark:border-gray-800 shadow-xl overflow-hidden">
+             {schoolInfo.logoUrl ? (
+                <img src={schoolInfo.logoUrl} alt="Board Logo" className="w-full h-full object-cover" />
+             ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-12 h-12"><path d="M22 10v6M2 10v6"/><path d="M2 16h20"/><path d="M12 22v-6"/><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="m22 7-10 5-10-5"/></svg>
+             )}
           </div>
         </div>
-        <div className="text-center md:text-left">
+        <div className="text-center md:text-left flex-grow">
           <h1 className="text-2xl md:text-3xl font-bold text-emerald-900 dark:text-emerald-500 uppercase font-serif tracking-tight">
-            Board of Intermediate and Secondary Education
+            {schoolInfo.name}
           </h1>
           <h2 className="text-xl md:text-2xl text-emerald-700 dark:text-emerald-600 font-semibold">
-            Dinajpur, Bangladesh
+            {schoolInfo.title}
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium italic">Empowering the Future through Quality Assessment</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 font-medium italic">{schoolInfo.address}</p>
         </div>
         
-        <div className="hidden lg:flex ml-auto items-center gap-4">
-             <div className="bg-emerald-50 dark:bg-gray-800 p-4 rounded-xl border border-emerald-100 dark:border-gray-700 flex items-center gap-4 shadow-sm">
-                <div className="text-right">
-                    <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-widest">Board Hotline</p>
-                    <p className="text-2xl font-black text-emerald-800 dark:text-emerald-400">16221</p>
+        <div className="hidden lg:flex items-center gap-4">
+             <div className="bg-emerald-50 dark:bg-gray-800 p-4 rounded-xl border border-emerald-100 dark:border-gray-700 flex items-center gap-6 shadow-sm">
+                <div className="text-center border-r border-emerald-100 dark:border-gray-700 pr-6">
+                    <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-widest">EIIN</p>
+                    <p className="text-xl font-black text-emerald-800 dark:text-emerald-400">{schoolInfo.eiin}</p>
+                </div>
+                <div className="text-center">
+                    <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-widest">Board Code</p>
+                    <p className="text-xl font-black text-emerald-800 dark:text-emerald-400">{schoolInfo.code}</p>
                 </div>
              </div>
         </div>
