@@ -274,6 +274,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ sections, onUpdate, generat
                       </div>
                     </div>
                   )}
+
                   {section.type === 'list' && (
                     <div className="space-y-3">
                       {section.data.links?.map((link: SidebarLink, lIdx: number) => (
@@ -295,6 +296,106 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ sections, onUpdate, generat
                       }} className="w-full py-2 border-2 border-dashed border-gray-200 dark:border-gray-700 text-emerald-600 font-bold text-xs rounded-xl">+ Add Link</button>
                     </div>
                   )}
+
+                  {section.type === 'hotlines' && (
+                    <div className="space-y-3">
+                      {section.data.hotlines?.map((h: SidebarHotline, hIdx: number) => (
+                        <div key={hIdx} className="flex gap-2 bg-gray-50 dark:bg-gray-900/50 p-3 rounded-xl items-end">
+                          <div className="flex-1 space-y-1">
+                            <label className="text-[9px] font-bold text-gray-400 uppercase">Title</label>
+                            <input type="text" value={h.title} onChange={e => {
+                              const hotlines = [...section.data.hotlines];
+                              hotlines[hIdx] = { ...h, title: e.target.value };
+                              handleLocalUpdate(sectionIdStr, { data: { ...section.data, hotlines } });
+                            }} className="w-full p-2 bg-white dark:bg-gray-800 rounded text-xs dark:text-white" />
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            <label className="text-[9px] font-bold text-gray-400 uppercase">Number</label>
+                            <input type="text" value={h.number} onChange={e => {
+                              const hotlines = [...section.data.hotlines];
+                              hotlines[hIdx] = { ...h, number: e.target.value };
+                              handleLocalUpdate(sectionIdStr, { data: { ...section.data, hotlines } });
+                            }} className="w-full p-2 bg-white dark:bg-gray-800 rounded text-xs dark:text-white" />
+                          </div>
+                          <button onClick={() => {
+                            const hotlines = section.data.hotlines.filter((_: any, i: number) => i !== hIdx);
+                            handleLocalUpdate(sectionIdStr, { data: { ...section.data, hotlines } });
+                          }} className="text-red-500 p-2"><Trash2 size={14}/></button>
+                        </div>
+                      ))}
+                      <button onClick={() => {
+                        const hotlines = [...(section.data.hotlines || []), { title: 'Emergency', number: '16221' }];
+                        handleLocalUpdate(sectionIdStr, { data: { ...section.data, hotlines } });
+                      }} className="w-full py-2 border-2 border-dashed border-gray-200 dark:border-gray-700 text-emerald-600 font-bold text-xs rounded-xl">+ Add Hotline</button>
+                    </div>
+                  )}
+
+                  {(section.type === 'map' || section.type === 'video') && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase">{section.type === 'map' ? 'Google Maps Embed URL' : 'YouTube Embed URL'}</label>
+                      <input 
+                        type="text" 
+                        value={section.data.url || ''} 
+                        onChange={e => handleLocalUpdate(sectionIdStr, { data: { ...section.data, url: e.target.value } })}
+                        className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-xs dark:text-white font-mono"
+                        placeholder="https://..."
+                      />
+                    </div>
+                  )}
+
+                  {section.type === 'audio' && (
+                    <UploaderField label="Audio File (MP3)" value={section.data.audioUrl} sectionId={sectionIdStr} dataKey="audioUrl" accept="audio/*" />
+                  )}
+
+                  {section.type === 'image_only' && (
+                    <UploaderField label="Static Image" value={section.data.image} sectionId={sectionIdStr} dataKey="image" accept="image/*" />
+                  )}
+
+                  {section.type === 'image_card' && (
+                    <div className="space-y-4">
+                      <UploaderField label="Card Image" value={section.data.image} sectionId={sectionIdStr} dataKey="image" accept="image/*" />
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase">Label / Description</label>
+                        <input 
+                          type="text" 
+                          value={section.data.name || ''} 
+                          onChange={e => handleLocalUpdate(sectionIdStr, { data: { ...section.data, name: e.target.value } })}
+                          className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-sm dark:text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {section.type === 'countdown' && (
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase">Target Date & Time</label>
+                      <input 
+                        type="datetime-local" 
+                        value={section.data.targetDate ? new Date(section.data.targetDate).toISOString().slice(0, 16) : ''} 
+                        onChange={e => handleLocalUpdate(sectionIdStr, { data: { ...section.data, targetDate: new Date(e.target.value).toISOString() } })}
+                        className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl text-sm dark:text-white"
+                      />
+                    </div>
+                  )}
+
+                  {section.type === 'notice' && (
+                    <div className="prose prose-sm max-w-none">
+                      <CKEditor
+                        editor={ClassicEditor}
+                        data={section.data.content || ''}
+                        onChange={(_, editor) => {
+                          const data = editor.getData();
+                          handleLocalUpdate(sectionIdStr, { data: { ...section.data, content: data } });
+                        }}
+                        config={{
+                          licenseKey: 'GPL',
+                          placeholder: 'Type notice content here...',
+                          toolbar: ['bold', 'italic', 'link', 'bulletedList', 'numberedList', 'undo', 'redo']
+                        }}
+                      />
+                    </div>
+                  )}
+
                   <button type="button" onClick={() => setEditingId(null)} className="w-full py-3 bg-gray-700 hover:bg-gray-800 text-white rounded-2xl font-bold text-xs shadow-lg">Close Editor</button>
                 </div>
               )}

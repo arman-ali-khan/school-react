@@ -142,7 +142,7 @@ const AdminInfoCards: React.FC<AdminInfoCardsProps> = ({ cards, onUpdate, genera
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {localCards.map(card => {
           const cardIdStr = String(card.id);
           const isEditing = editingCardId === cardIdStr;
