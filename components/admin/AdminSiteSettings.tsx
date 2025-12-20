@@ -4,7 +4,7 @@ import {
   Save, Globe, Info, Search, Phone, RefreshCw, Plus, Trash2, 
   Link as LinkIcon, Mail, Upload, X, ImageIcon, 
   GraduationCap, School, Book, Library, Award, Shield, Building, Users, CheckCircle, FileText,
-  BarChart, Share2, Tag, User as UserIcon, Bot, MessageSquareText, Sparkles
+  BarChart, Share2, Tag, User as UserIcon
 } from 'lucide-react';
 import { TopBarConfig, FooterConfig, SchoolInfo, SEOMeta } from '../../types';
 
@@ -213,28 +213,6 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
         </div>
         
         <SaveButton section="School Info" onClick={() => handleSave('School Info', () => onUpdateSchool(localSchool))} />
-      </section>
-
-      {/* Gemini AI Assistant Config */}
-      <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
-        <SectionHeader icon={Bot} title="Gemini AI Assistant Configuration" />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
-          <div className="space-y-4">
-             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><Sparkles size={10}/> AI Model ID</label>
-              <input type="text" value={localSEO.aiModel || ''} onChange={e=>setLocalSEO({...localSEO, aiModel: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500" placeholder="gemini-3-flash-preview" />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><MessageSquareText size={10}/> Dynamic Welcome Message</label>
-              <textarea value={localSEO.aiWelcomeMessage || ''} onChange={e=>setLocalSEO({...localSEO, aiWelcomeMessage: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm h-24 focus:ring-2 focus:ring-emerald-500 resize-none" placeholder="Message shown when chat opens..." />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1"><UserIcon size={10}/> Assistant Persona (System Instruction)</label>
-            <textarea value={localSEO.aiSystemInstruction || ''} onChange={e=>setLocalSEO({...localSEO, aiSystemInstruction: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm h-full min-h-[160px] focus:ring-2 focus:ring-emerald-500 resize-none" placeholder="Instructions that define how the AI acts..." />
-          </div>
-        </div>
-        <SaveButton section="AI Config" onClick={() => handleSave('AI Config', () => onUpdateSEO(localSEO))} />
       </section>
 
       {/* SEO Meta & Configuration Manager */}

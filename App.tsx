@@ -19,7 +19,8 @@ import {
   updateHomeWidgetsThunk,
   incrementVisit,
   setMenuItems, 
-  setInfoCards 
+  setInfoCards,
+  markNotificationRead
 } from './store/slices/contentSlice';
 
 // Layout Components
@@ -36,6 +37,7 @@ import NoticeBoard from './components/features/NoticeBoard';
 import Sidebar from './components/features/Sidebar';
 import InfoCardsSection from './components/features/InfoCardsSection';
 import HomeWidget from './components/features/HomeWidget';
+import NotificationBanner from './components/features/NotificationBanner';
 
 // Page Components
 import LoginPage from './pages/LoginPage';
@@ -51,6 +53,7 @@ import AllNoticesPage from './pages/AllNoticesPage';
 import AllNewsPage from './pages/AllNewsPage';
 import AdminDashboard from './pages/AdminDashboard.tsx';
 import DynamicPage from './pages/DynamicPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>() as any;
@@ -58,7 +61,7 @@ const App: React.FC = () => {
   const { 
     notices, news, pages, carouselItems, sidebarSections, 
     infoCards, menuItems, topBarConfig, footerConfig, 
-    homeWidgets, isLoading: isContentLoading 
+    homeWidgets, notifications, isLoading: isContentLoading 
   } = useSelector((state: RootState) => state.content);
 
   const [currentPage, setCurrentPage] = useState<string>('home');
@@ -159,6 +162,15 @@ const App: React.FC = () => {
             onBack={() => navigate('home')}
           />
         );
+      case 'notifications':
+        if (user?.role !== 'Admin') return <AccessDenied />;
+        return (
+          <NotificationsPage 
+            notifications={notifications}
+            onMarkRead={(id) => dispatch(markNotificationRead(id))}
+            onBack={() => navigate('home')}
+          />
+        );
       default: return <NotFound />;
     }
   };
@@ -192,6 +204,16 @@ const App: React.FC = () => {
           else navigate(h);
         }} 
       />
+      
+      {/* Admin Exclusive Notification Banner */}
+      {user?.role === 'Admin' && (
+        <NotificationBanner 
+          notifications={notifications}
+          onMarkRead={(id) => dispatch(markNotificationRead(id))}
+          onSeeAll={() => navigate('notifications')}
+        />
+      )}
+
       <main className="flex-grow container mx-auto px-4 py-8">
         {renderActivePage()}
       </main>

@@ -1,7 +1,7 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { supabase } from '../../services/supabase';
-import { Notice, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, TopBarConfig, FooterConfig, HomeWidgetConfig, NewsItem, SchoolInfo, SEOMeta, VisitorStats } from '../../types';
+import { Notice, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, TopBarConfig, FooterConfig, HomeWidgetConfig, NewsItem, SchoolInfo, SEOMeta, VisitorStats, Notification } from '../../types';
 import { NOTICES, NEWS_ITEMS, INITIAL_PAGES, CAROUSEL_ITEMS, SIDEBAR_SECTIONS, INFO_CARDS, MAIN_MENU, DEFAULT_TOPBAR_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HOME_WIDGETS } from '../../constants';
 
 interface ContentState {
@@ -18,6 +18,7 @@ interface ContentState {
   schoolInfo: SchoolInfo;
   seoMeta: SEOMeta;
   visitorStats: VisitorStats;
+  notifications: Notification[];
   isLoading: boolean;
   error: string | null;
 }
@@ -57,9 +58,28 @@ const initialState: ContentState = {
     month: 0,
     total: 0
   },
+  notifications: [],
   isLoading: true,
   error: null,
 };
+
+export const fetchNotifications = createAsyncThunk('content/fetchNotifications', async () => {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('*')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data as Notification[];
+});
+
+export const markNotificationRead = createAsyncThunk('content/markNotificationRead', async (id: string) => {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ is_read: true })
+    .eq('id', id);
+  if (error) throw error;
+  return id;
+});
 
 export const fetchVisitorStats = createAsyncThunk('content/fetchVisitorStats', async () => {
   const today = new Date().toISOString().split('T')[0];
@@ -92,6 +112,7 @@ export const incrementVisit = createAsyncThunk('content/incrementVisit', async (
 
 export const fetchAllContent = createAsyncThunk('content/fetchAll', async (_, { dispatch }) => {
   dispatch(fetchVisitorStats());
+  dispatch(fetchNotifications());
   
   const results = await Promise.allSettled([
     supabase.from('notices').select('*').order('date', { ascending: false }),
@@ -246,6 +267,14 @@ const contentSlice = createSlice({
       })
       .addCase(fetchVisitorStats.fulfilled, (state, action) => {
         state.visitorStats = action.payload;
+      })
+      .addCase(fetchNotifications.fulfilled, (state, action) => {
+        state.notifications = action.payload;
+      })
+      .addCase(markNotificationRead.fulfilled, (state, action) => {
+        state.notifications = state.notifications.map(n => 
+          n.id === action.payload ? { ...n, is_read: true } : n
+        );
       })
       .addCase(addNoticeThunk.fulfilled, (state, action) => { state.notices.unshift(action.payload); })
       .addCase(updateNoticeThunk.fulfilled, (state, action) => { state.notices = state.notices.map(n => n.id === action.payload.id ? action.payload : n); })

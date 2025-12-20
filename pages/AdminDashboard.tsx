@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, FileText, Newspaper, Users, ArrowLeft, 
-  Menu, Image, Settings, Globe, Search, Play, Files, AlertTriangle, X
+  Menu, Image, Settings, Globe, Search, Play, Files, AlertTriangle, X, Code
 } from 'lucide-react';
 import { 
   Notice, User as UserType, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, 
@@ -26,6 +26,7 @@ import AdminSiteSettings from '../components/admin/AdminSiteSettings';
 import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminInfoCards from '../components/admin/AdminInfoCards';
 import AdminHomeWidgets from '../components/admin/AdminHomeWidgets';
+import AdminAPISettings from '../components/admin/AdminAPISettings';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -39,7 +40,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
     homeWidgets, schoolInfo, seoMeta 
   } = useSelector((state: RootState) => state.content);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'notices' | 'news' | 'pages' | 'infocards' | 'sidebar' | 'carousel' | 'menu' | 'settings' | 'homepage'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'notices' | 'news' | 'pages' | 'infocards' | 'sidebar' | 'carousel' | 'menu' | 'settings' | 'homepage' | 'api'>('overview');
   const [globalError, setGlobalError] = useState<string | null>(null);
 
   const generateUUID = () => Math.random().toString(36).substring(2, 11);
@@ -102,6 +103,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
         return <AdminInfoCards cards={infoCards} onUpdate={items => handleAction(() => dispatch(updateInfoCardsThunk(items)).unwrap())} generateUUID={generateUUID} />;
       case 'homepage':
         return <AdminHomeWidgets widgets={homeWidgets} onUpdate={items => handleAction(() => dispatch(updateHomeWidgetsThunk(items)).unwrap())} generateUUID={generateUUID} />;
+      case 'api':
+        return (
+          <AdminAPISettings 
+            seo={seoMeta}
+            onUpdateSEO={s => handleAction(() => dispatch(updateSettingsThunk({key:'seoMeta', value:s})).unwrap())}
+          />
+        );
       case 'settings':
         return (
           <AdminSiteSettings 
@@ -157,6 +165,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
                       { id: 'infocards', icon: Play, label: 'Info Cards' },
                       { id: 'sidebar', icon: Settings, label: 'Sidebar' },
                       { id: 'homepage', icon: LayoutDashboard, label: 'Widgets' },
+                      { id: 'api', icon: Code, label: 'API & AI' },
                       { id: 'settings', icon: Globe, label: 'Site Setup' },
                   ].map((item) => (
                       <button 

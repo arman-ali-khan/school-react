@@ -121,6 +121,8 @@ export interface SEOMeta {
   aiSystemInstruction?: string;
   aiModel?: string;
   aiWelcomeMessage?: string;
+  // Subscription API Config
+  websiteSubscriptionKey?: string;
 }
 
 export interface VisitorStats {
@@ -128,6 +130,16 @@ export interface VisitorStats {
   yesterday: number;
   month: number;
   total: number;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'success' | 'error';
+  is_read: boolean;
+  link?: string;
+  created_at: string;
 }
 
 export type HomeWidgetType = 'youtube' | 'map' | 'image' | 'video';
