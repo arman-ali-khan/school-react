@@ -130,6 +130,8 @@ export interface VisitorStats {
   yesterday: number;
   month: number;
   total: number;
+  historyDays: number;
+  lastSevenDays: { day: string; count: number }[];
 }
 
 export interface Notification {

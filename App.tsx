@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useDispatch, useSelector } from 'react-redux';
+import NProgress from 'nprogress';
 import { RootState, AppDispatch } from './store';
 import { restoreSession, signOutUser, setUser } from './store/slices/authSlice';
 import { 
@@ -30,7 +31,6 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 
 // Feature Components
-import ChatWidget from './components/features/ChatWidget';
 import HeroSlider from './components/features/HeroSlider';
 import NewsTicker from './components/features/NewsTicker';
 import NoticeBoard from './components/features/NoticeBoard';
@@ -55,6 +55,9 @@ import AdminDashboard from './pages/AdminDashboard.tsx';
 import DynamicPage from './pages/DynamicPage';
 import NotificationsPage from './pages/NotificationsPage';
 
+// Configure NProgress
+NProgress.configure({ showSpinner: false, speed: 400, minimum: 0.2 });
+
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>() as any;
   const { user, isLoading: isAuthLoading } = useSelector((state: RootState) => state.auth);
@@ -69,6 +72,7 @@ const App: React.FC = () => {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const navigate = useCallback((page: string, params: any = {}, updateHash = true) => {
+    NProgress.start();
     setCurrentPage(page);
     setRouteParams(params);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -89,8 +93,12 @@ const App: React.FC = () => {
     dispatch(incrementVisit());
     
     const handleHashChange = () => {
+      NProgress.start();
       const hash = window.location.hash.replace('#', '');
-      if (!hash) { navigate('home', {}, false); return; }
+      if (!hash) { 
+        navigate('home', {}, false); 
+        return; 
+      }
       const [page, query] = hash.split('?');
       const params = Object.fromEntries(new URLSearchParams(query || ''));
       navigate(page, params, false);
@@ -105,6 +113,11 @@ const App: React.FC = () => {
     if (isDarkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [isDarkMode]);
+
+  // Complete progress bar when the page content effectively changes
+  useEffect(() => {
+    NProgress.done();
+  }, [currentPage, routeParams]);
 
   const renderActivePage = () => {
     switch (currentPage) {
@@ -214,10 +227,9 @@ const App: React.FC = () => {
         />
       )}
 
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto sm:px-4 py-8">
         {renderActivePage()}
       </main>
-      <ChatWidget />
       <Footer config={footerConfig} />
     </div>
   );

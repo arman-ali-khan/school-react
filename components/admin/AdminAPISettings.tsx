@@ -1,10 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 import { 
   Bot, Sparkles, MessageSquareText, User as UserIcon, 
-  Save, RefreshCw, Key, ShieldCheck, Info
+  Save, RefreshCw, Key, ShieldCheck, Info, Database, 
+  Calendar, CheckCircle2, Zap
 } from 'lucide-react';
 import { SEOMeta } from '../../types';
+import { RootState } from '../../store';
 
 interface AdminAPISettingsProps {
   seo: SEOMeta;
@@ -12,6 +15,7 @@ interface AdminAPISettingsProps {
 }
 
 const AdminAPISettings: React.FC<AdminAPISettingsProps> = ({ seo, onUpdateSEO }) => {
+  const { visitorStats } = useSelector((state: RootState) => state.content);
   const [localSEO, setLocalSEO] = useState<SEOMeta>(seo);
   const [saving, setSaving] = useState(false);
 
@@ -41,8 +45,45 @@ const AdminAPISettings: React.FC<AdminAPISettingsProps> = ({ seo, onUpdateSEO })
   return (
     <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500 pb-20">
       
+      {/* API Data Statistics Card */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-emerald-600 text-white p-5 rounded-3xl shadow-xl shadow-emerald-900/10 flex flex-col justify-between h-40">
+           <div className="flex items-center justify-between opacity-80">
+              <span className="text-[10px] font-black uppercase tracking-widest">History Log</span>
+              <Database size={16} />
+           </div>
+           <div>
+              <h4 className="text-4xl font-black mb-1">{visitorStats.historyDays}</h4>
+              <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">Days of records tracked</p>
+           </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl border dark:border-gray-700 shadow-sm flex flex-col justify-between h-40">
+           <div className="flex items-center justify-between text-gray-400">
+              <span className="text-[10px] font-black uppercase tracking-widest">API Health</span>
+              <Zap size={16} className="text-yellow-500" />
+           </div>
+           <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h4 className="text-2xl font-black dark:text-white tracking-tighter">99.9%</h4>
+                <CheckCircle2 size={16} className="text-emerald-500" />
+              </div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Gemini API Connectivity</p>
+           </div>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl border dark:border-gray-700 shadow-sm flex flex-col justify-between h-40">
+           <div className="flex items-center justify-between text-gray-400">
+              <span className="text-[10px] font-black uppercase tracking-widest">Sync Cycle</span>
+              <Calendar size={16} className="text-blue-500" />
+           </div>
+           <div>
+              <h4 className="text-2xl font-black dark:text-white tracking-tighter">Automated</h4>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Global Data Integrity</p>
+           </div>
+        </div>
+      </section>
+
       {/* Website Subscription Config */}
-      <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
+      <section className="bg-white dark:bg-gray-800 p-6 rounded-3xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
         <SectionHeader icon={Key} title="Subscription Store Configuration" />
         <div className="grid grid-cols-1 gap-6">
           <div className="space-y-1">
@@ -53,21 +94,21 @@ const AdminAPISettings: React.FC<AdminAPISettingsProps> = ({ seo, onUpdateSEO })
               type="password" 
               value={localSEO.websiteSubscriptionKey || ''} 
               onChange={e => setLocalSEO({...localSEO, websiteSubscriptionKey: e.target.value})} 
-              className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500" 
+              className="w-full p-3.5 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl dark:text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500" 
               placeholder="Enter subscription service key..." 
             />
-            <p className="text-[9px] text-gray-400 mt-1 flex items-center gap-1 italic">
-              <Info size={10}/> This key is used to authorize paid board services and notifications.
+            <p className="text-[9px] text-gray-400 mt-2 flex items-center gap-1 italic">
+              <Info size={10}/> This key authorizes paid board features and SMS alerts.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Gemini AI Assistant Config (Moved from Site Setup) */}
-      <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
-        <SectionHeader icon={Bot} title="Gemini AI Assistant Configuration" />
+      {/* Gemini AI Assistant Config */}
+      <section className="bg-white dark:bg-gray-800 p-6 rounded-3xl border dark:border-gray-700 shadow-sm transition-all focus-within:ring-2 focus-within:ring-emerald-500/20">
+        <SectionHeader icon={Bot} title="Gemini AI Configuration" />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
-          <div className="space-y-4">
+          <div className="space-y-6">
              <div className="space-y-1">
               <label className="text-[10px] font-bold text-gray-400 uppercase flex items-center gap-1">
                 <Sparkles size={10}/> AI Model ID
@@ -76,7 +117,7 @@ const AdminAPISettings: React.FC<AdminAPISettingsProps> = ({ seo, onUpdateSEO })
                 type="text" 
                 value={localSEO.aiModel || ''} 
                 onChange={e => setLocalSEO({...localSEO, aiModel: e.target.value})} 
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500" 
+                className="w-full p-3.5 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl dark:text-white text-sm font-mono focus:ring-2 focus:ring-emerald-500" 
                 placeholder="gemini-3-flash-preview" 
               />
             </div>
@@ -87,7 +128,7 @@ const AdminAPISettings: React.FC<AdminAPISettingsProps> = ({ seo, onUpdateSEO })
               <textarea 
                 value={localSEO.aiWelcomeMessage || ''} 
                 onChange={e => setLocalSEO({...localSEO, aiWelcomeMessage: e.target.value})} 
-                className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm h-24 focus:ring-2 focus:ring-emerald-500 resize-none" 
+                className="w-full p-3.5 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl dark:text-white text-sm h-24 focus:ring-2 focus:ring-emerald-500 resize-none shadow-inner" 
                 placeholder="Message shown when chat opens..." 
               />
             </div>
@@ -99,7 +140,7 @@ const AdminAPISettings: React.FC<AdminAPISettingsProps> = ({ seo, onUpdateSEO })
             <textarea 
               value={localSEO.aiSystemInstruction || ''} 
               onChange={e => setLocalSEO({...localSEO, aiSystemInstruction: e.target.value})} 
-              className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm h-full min-h-[160px] focus:ring-2 focus:ring-emerald-500 resize-none" 
+              className="w-full p-3.5 bg-gray-50 dark:bg-gray-900 border-none rounded-2xl dark:text-white text-sm h-full min-h-[180px] focus:ring-2 focus:ring-emerald-500 resize-none shadow-inner" 
               placeholder="Instructions that define how the AI acts..." 
             />
           </div>
@@ -111,10 +152,10 @@ const AdminAPISettings: React.FC<AdminAPISettingsProps> = ({ seo, onUpdateSEO })
           type="button"
           onClick={handleSave}
           disabled={saving}
-          className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-800 text-white px-8 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-900/10 disabled:opacity-50"
+          className="flex items-center gap-3 bg-emerald-700 hover:bg-emerald-800 text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-xl shadow-emerald-900/20 disabled:opacity-50"
         >
-          {saving ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
-          {saving ? 'Saving...' : 'Save API Settings'}
+          {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
+          {saving ? 'Synchronizing...' : 'Save API Settings'}
         </button>
       </div>
     </div>

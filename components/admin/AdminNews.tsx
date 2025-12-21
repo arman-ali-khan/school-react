@@ -164,7 +164,7 @@ const AdminNews: React.FC<AdminNewsProps> = ({ news, onAdd, onUpdate, onDelete, 
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">News Thumbnail (800x400)</label>
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className={`h-[250px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer relative group overflow-hidden ${
+                className={`h-[345px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer relative group overflow-hidden ${
                   thumbnailUrl 
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/10' 
                     : 'border-gray-200 dark:border-gray-700 hover:border-blue-400 hover:bg-gray-50 dark:hover:bg-gray-900'

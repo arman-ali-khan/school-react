@@ -12,6 +12,7 @@
       }
     </script>
    <link href="https://fonts.googleapis.com/css2?family=Mrs+Saint+Delafield&display=swap" rel="stylesheet">
+   <link rel="stylesheet" href="https://unpkg.com/nprogress@0.2.0/nprogress.css">
    
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -61,6 +62,23 @@
       .dark .ck.ck-list {
         background: #1f2937 !important;
       }
+
+      /* NProgress Custom Theme Colors */
+      #nprogress .bar {
+        background: #059669 !important; /* emerald-600 */
+        height: 3px !important;
+      }
+      #nprogress .peg {
+        box-shadow: 0 0 10px #059669, 0 0 5px #059669 !important;
+      }
+      #nprogress .spinner-icon {
+        border-top-color: #059669 !important;
+        border-left-color: #059669 !important;
+      }
+      
+.ck.ck-content.ck-editor__editable.ck-rounded-corners.ck-editor__editable_inline {
+    height: 310px;
+}
     </style>
   <script type="importmap">
 {
@@ -75,6 +93,7 @@
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.48.1",
     "@ckeditor/ckeditor5-react": "https://esm.sh/@ckeditor/ckeditor5-react@9.0.0?deps=react@19.0.0",
     "@ckeditor/ckeditor5-build-classic": "https://esm.sh/@ckeditor/ckeditor5-build-classic@44.1.0",
+    "nprogress": "https://esm.sh/nprogress@0.2.0",
     "react/": "https://esm.sh/react@^19.2.3/",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
