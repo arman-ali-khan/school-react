@@ -53,7 +53,7 @@ const Header: React.FC = () => {
                     <p className="text-xl font-black text-emerald-800 dark:text-emerald-400">{schoolInfo.eiin}</p>
                 </div>
                 <div className="text-center">
-                    <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-widest">Board Code</p>
+                    <p className="text-[10px] uppercase font-bold text-gray-400 dark:text-gray-500 tracking-widest">Founded</p>
                     <p className="text-xl font-black text-emerald-800 dark:text-emerald-400">{schoolInfo.code}</p>
                 </div>
              </div>

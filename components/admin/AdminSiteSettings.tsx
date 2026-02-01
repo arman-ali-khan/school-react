@@ -202,7 +202,7 @@ const AdminSiteSettings: React.FC<AdminSiteSettingsProps> = ({
               <input type="text" value={localSchool.eiin} onChange={e=>setLocalSchool({...localSchool, eiin: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-bold text-gray-400 uppercase">Board Code</label>
+              <label className="text-[10px] font-bold text-gray-400 uppercase">Founded</label>
               <input type="text" value={localSchool.code} onChange={e=>setLocalSchool({...localSchool, code: e.target.value})} className="w-full p-2.5 bg-gray-50 dark:bg-gray-900 border-none rounded-xl dark:text-white text-sm focus:ring-2 focus:ring-emerald-500" />
             </div>
             <div className="md:col-span-2 space-y-1">
