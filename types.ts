@@ -19,6 +19,39 @@ export interface NewsItem {
   date: string;
 }
 
+export interface Teacher {
+  id: string;
+  name: string;
+  position: 'Assistant Teacher' | 'Junior Teacher' | 'Head Teacher';
+  subject: string;
+  photo_url?: string;
+  phone: string;
+  address: string;
+  birthday: string;
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  position: string;
+  department: string;
+  photo_url?: string;
+  phone: string;
+  address: string;
+  birthday: string;
+}
+
+export interface Result {
+  id: string;
+  roll_no: string;
+  student_name: string;
+  exam_type: 'JSC' | 'SSC' | 'HSC';
+  exam_year: number;
+  gpa: number;
+  grade: string;
+  status: 'Pass' | 'Fail';
+}
+
 export type UserRole = 'Admin' | 'Student' | 'Teacher' | 'Guardian';
 
 export interface User {
@@ -72,9 +105,9 @@ export type SidebarSectionType =
   | 'hotlines' 
   | 'map' 
   | 'video' 
-  | 'image_only'
-  | 'countdown'
-  | 'datetime'
+  | 'image_only' 
+  | 'countdown' 
+  | 'datetime' 
   | 'notice';
 
 export interface SidebarSection {

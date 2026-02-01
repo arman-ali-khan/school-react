@@ -16,28 +16,46 @@ const initialState: AuthState = {
 };
 
 export const restoreSession = createAsyncThunk('auth/restoreSession', async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) return null;
+  try {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError || !session) return null;
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', session.user.id)
-    .single();
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', session.user.id)
+      .single();
 
-  return {
-    name: profile?.name || session.user.email?.split('@')[0] || 'User',
-    email: session.user.email || '',
-    role: profile?.role || 'Student',
-    institute: profile?.institute,
-    mobile: profile?.mobile,
-  };
+    if (profileError) {
+      return {
+        name: session.user.email?.split('@')[0] || 'User',
+        email: session.user.email || '',
+        role: 'Student',
+      };
+    }
+
+    return {
+      name: profile?.name || session.user.email?.split('@')[0] || 'User',
+      email: session.user.email || '',
+      role: profile?.role || 'Student',
+      institute: profile?.institute,
+      mobile: profile?.mobile,
+    };
+  } catch (e) {
+    console.warn("Session restoration failed due to network error:", e);
+    return null;
+  }
 });
 
 export const signOutUser = createAsyncThunk('auth/signOut', async () => {
-  await supabase.auth.signOut();
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('user_id');
+  try {
+    await supabase.auth.signOut();
+  } catch (e) {
+    console.error("Sign out network error:", e);
+  } finally {
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user_id');
+  }
 });
 
 const authSlice = createSlice({

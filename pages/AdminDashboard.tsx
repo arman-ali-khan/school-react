@@ -2,18 +2,22 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, FileText, Newspaper, Users, ArrowLeft, 
-  Menu, Image, Settings, Globe, Search, Play, Files, AlertTriangle, X, Code, Bell
+  Menu, Image, Settings, Globe, Search, Play, Files, AlertTriangle, X, Code, Bell,
+  UserCheck, Briefcase, Award
 } from 'lucide-react';
 import { 
   Notice, User as UserType, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, 
-  TopBarConfig, FooterConfig, HomeWidgetConfig, NewsItem, SchoolInfo, SEOMeta 
+  TopBarConfig, FooterConfig, HomeWidgetConfig, NewsItem, SchoolInfo, SEOMeta, Teacher, Employee, Result 
 } from '../types';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../store';
 import { 
   updateSettingsThunk, updateSidebarThunk, updateInfoCardsThunk, 
   updateHomeWidgetsThunk, addNoticeThunk, updateNoticeThunk, addNewsThunk, updateNewsThunk, addPageThunk,
-  updatePageThunk, deletePageThunk, deleteNoticeThunk, deleteNewsThunk 
+  updatePageThunk, deletePageThunk, deleteNoticeThunk, deleteNewsThunk,
+  addTeacherThunk, updateTeacherThunk, deleteTeacherThunk,
+  addEmployeeThunk, updateEmployeeThunk, deleteEmployeeThunk,
+  addResultThunk, updateResultThunk, deleteResultThunk
 } from '../store/slices/contentSlice';
 
 import AdminOverview from '../components/admin/AdminOverview';
@@ -27,6 +31,9 @@ import AdminSidebar from '../components/admin/AdminSidebar';
 import AdminInfoCards from '../components/admin/AdminInfoCards';
 import AdminHomeWidgets from '../components/admin/AdminHomeWidgets';
 import AdminAPISettings from '../components/admin/AdminAPISettings';
+import AdminTeachers from '../components/admin/AdminTeachers';
+import AdminEmployees from '../components/admin/AdminEmployees';
+import AdminResults from '../components/admin/AdminResults';
 
 interface AdminDashboardProps {
   onBack: () => void;
@@ -35,12 +42,12 @@ interface AdminDashboardProps {
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
   const dispatch = useDispatch() as any;
   const { 
-    notices, news, pages, carouselItems, sidebarSections, 
+    notices, news, pages, teachers, employees, results, carouselItems, sidebarSections, 
     infoCards, menuItems, topBarConfig, footerConfig, 
     homeWidgets, schoolInfo, seoMeta 
   } = useSelector((state: RootState) => state.content);
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'notices' | 'news' | 'pages' | 'infocards' | 'sidebar' | 'carousel' | 'menu' | 'settings' | 'homepage' | 'api'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'notices' | 'news' | 'pages' | 'results' | 'teachers' | 'employees' | 'infocards' | 'sidebar' | 'carousel' | 'menu' | 'settings' | 'homepage' | 'api'>('overview');
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -78,6 +85,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
             onUpdate={n => handleAction(() => dispatch(updateNewsThunk(n)).unwrap())}
             onDelete={id => handleAction(() => dispatch(deleteNewsThunk(id)).unwrap())} 
             generateUUID={generateUUID} 
+          />
+        );
+      case 'results':
+        return (
+          <AdminResults 
+            results={results}
+            onAdd={r => handleAction(() => dispatch(addResultThunk(r)).unwrap())}
+            onUpdate={r => handleAction(() => dispatch(updateResultThunk(r)).unwrap())}
+            onDelete={id => handleAction(() => dispatch(deleteResultThunk(id)).unwrap())}
+            generateUUID={generateUUID}
+          />
+        );
+      case 'teachers':
+        return (
+          <AdminTeachers 
+            teachers={teachers}
+            onAdd={t => handleAction(() => dispatch(addTeacherThunk(t)).unwrap())}
+            onUpdate={t => handleAction(() => dispatch(updateTeacherThunk(t)).unwrap())}
+            onDelete={id => handleAction(() => dispatch(deleteTeacherThunk(id)).unwrap())}
+            generateUUID={generateUUID}
+          />
+        );
+      case 'employees':
+        return (
+          <AdminEmployees 
+            employees={employees}
+            onAdd={e => handleAction(() => dispatch(addEmployeeThunk(e)).unwrap())}
+            onUpdate={e => handleAction(() => dispatch(updateEmployeeThunk(e)).unwrap())}
+            onDelete={id => handleAction(() => dispatch(deleteEmployeeThunk(id)).unwrap())}
+            generateUUID={generateUUID}
           />
         );
       case 'pages':
@@ -130,6 +167,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
       { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
       { id: 'notices', icon: FileText, label: 'Notices' },
       { id: 'news', icon: Newspaper, label: 'News Ticker' },
+      { id: 'results', icon: Award, label: 'Results Manager' },
+      { id: 'teachers', icon: UserCheck, label: 'Academic Staff' },
+      { id: 'employees', icon: Briefcase, label: 'Admin Staff' },
       { id: 'pages', icon: Files, label: 'Pages' },
       { id: 'carousel', icon: Image, label: 'Banners' },
       { id: 'menu', icon: Menu, label: 'Menu' },
@@ -212,7 +252,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
       {/* Mobile Bottom Navigation Bar */}
       <div className="fixed bottom-0 inset-x-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-t dark:border-gray-800 z-[50] md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.1)] transition-colors">
         <div className="flex items-center justify-around p-2">
-           {/* 1. Admin Menu Drawer show button */}
            <button 
             onClick={() => setIsDrawerOpen(!isDrawerOpen)}
             className={`flex flex-col items-center gap-0.5 p-2 rounded-xl transition-all ${isDrawerOpen ? 'text-emerald-600 scale-110' : 'text-gray-400'}`}
@@ -221,7 +260,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
              <span className="text-[10px] font-black uppercase tracking-tighter">Menu</span>
            </button>
 
-           {/* 2. Notifications */}
            <button 
             onClick={() => window.location.hash = 'notifications'}
             className="flex flex-col items-center gap-0.5 p-2 text-gray-400 transition-all hover:text-emerald-600"
@@ -230,7 +268,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
              <span className="text-[10px] font-black uppercase tracking-tighter">Alerts</span>
            </button>
 
-           {/* 3. Admin Overview */}
            <button 
             onClick={() => setActiveTab('overview')}
             className={`flex flex-col items-center gap-0.5 p-2 rounded-xl transition-all ${activeTab === 'overview' ? 'text-emerald-600 scale-110' : 'text-gray-400'}`}
@@ -239,16 +276,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({ onBack }) => {
              <span className="text-[10px] font-black uppercase tracking-tighter">Summary</span>
            </button>
 
-           {/* 4. Notice */}
            <button 
-            onClick={() => setActiveTab('notices')}
-            className={`flex flex-col items-center gap-0.5 p-2 rounded-xl transition-all ${activeTab === 'notices' ? 'text-emerald-600 scale-110' : 'text-gray-400'}`}
+            onClick={() => setActiveTab('results')}
+            className={`flex flex-col items-center gap-0.5 p-2 rounded-xl transition-all ${activeTab === 'results' ? 'text-emerald-600 scale-110' : 'text-gray-400'}`}
            >
-             <FileText size={22} />
-             <span className="text-[10px] font-black uppercase tracking-tighter">Notice</span>
+             <Award size={22} />
+             <span className="text-[10px] font-black uppercase tracking-tighter">Results</span>
            </button>
 
-           {/* 5. Site Setup */}
            <button 
             onClick={() => setActiveTab('settings')}
             className={`flex flex-col items-center gap-0.5 p-2 rounded-xl transition-all ${activeTab === 'settings' ? 'text-emerald-600 scale-110' : 'text-gray-400'}`}

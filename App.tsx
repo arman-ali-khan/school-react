@@ -54,6 +54,8 @@ import AllNewsPage from './pages/AllNewsPage';
 import AdminDashboard from './pages/AdminDashboard.tsx';
 import DynamicPage from './pages/DynamicPage';
 import NotificationsPage from './pages/NotificationsPage';
+import OurFacultyPage from './pages/OurFacultyPage';
+import ResultsPage from './pages/ResultsPage';
 
 // Configure NProgress
 NProgress.configure({ showSpinner: false, speed: 400, minimum: 0.2 });
@@ -62,7 +64,7 @@ const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>() as any;
   const { user, isLoading: isAuthLoading } = useSelector((state: RootState) => state.auth);
   const { 
-    notices, news, pages, carouselItems, sidebarSections, 
+    notices, news, pages, teachers, employees, results, carouselItems, sidebarSections, 
     infoCards, menuItems, topBarConfig, footerConfig, 
     homeWidgets, notifications, isLoading: isContentLoading 
   } = useSelector((state: RootState) => state.content);
@@ -160,6 +162,10 @@ const App: React.FC = () => {
       case 'chairman': 
         const chairmanSection = sidebarSections.find(s => s.type === 'message');
         return <ChairmanMessagePage onBack={() => navigate('home')} data={chairmanSection?.data} />;
+      case 'our-faculty':
+        return <OurFacultyPage teachers={teachers} employees={employees} onBack={() => navigate('home')} />;
+      case 'results':
+        return <ResultsPage results={results} onBack={() => navigate('home')} />;
       case 'notice': return <SingleNoticePage noticeId={routeParams.id} notices={notices} onBack={() => navigate('home')} />;
       case 'news': return <SingleNewsPage newsItem={news.find(n => n.id === routeParams.newsId)} onBack={() => navigate('home')} />;
       case 'all-notices': return <AllNoticesPage notices={notices} onBack={() => navigate('home')} onNavigateNotice={(id) => navigate('notice', { id })} />;

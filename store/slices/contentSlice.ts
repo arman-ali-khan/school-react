@@ -1,13 +1,16 @@
 
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { supabase } from '../../services/supabase';
-import { Notice, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, TopBarConfig, FooterConfig, HomeWidgetConfig, NewsItem, SchoolInfo, SEOMeta, VisitorStats, Notification } from '../../types';
+import { Notice, Page, CarouselItem, SidebarSection, InfoCard, MenuItem, TopBarConfig, FooterConfig, HomeWidgetConfig, NewsItem, SchoolInfo, SEOMeta, VisitorStats, Notification, Teacher, Employee, Result } from '../../types';
 import { NOTICES, NEWS_ITEMS, INITIAL_PAGES, CAROUSEL_ITEMS, SIDEBAR_SECTIONS, INFO_CARDS, MAIN_MENU, DEFAULT_TOPBAR_CONFIG, DEFAULT_FOOTER_CONFIG, DEFAULT_HOME_WIDGETS } from '../../constants';
 
 interface ContentState {
   notices: Notice[];
   news: NewsItem[];
   pages: Page[];
+  teachers: Teacher[];
+  employees: Employee[];
+  results: Result[];
   carouselItems: CarouselItem[];
   sidebarSections: SidebarSection[];
   infoCards: InfoCard[];
@@ -27,6 +30,9 @@ const initialState: ContentState = {
   notices: NOTICES,
   news: NEWS_ITEMS,
   pages: INITIAL_PAGES,
+  teachers: [],
+  employees: [],
+  results: [],
   carouselItems: CAROUSEL_ITEMS,
   sidebarSections: SIDEBAR_SECTIONS,
   infoCards: INFO_CARDS,
@@ -79,7 +85,7 @@ export const fetchNotifications = createAsyncThunk('content/fetchNotifications',
       .from('notifications')
       .select('*')
       .order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) return [];
     return data as Notification[];
   } catch (e) {
     return [];
@@ -92,10 +98,10 @@ export const markNotificationRead = createAsyncThunk('content/markNotificationRe
       .from('notifications')
       .update({ is_read: true })
       .eq('id', id);
-    return id;
   } catch (e) {
-    return id;
+    console.warn("Failed to mark notification read:", e);
   }
+  return id;
 });
 
 export const fetchVisitorStats = createAsyncThunk('content/fetchVisitorStats', async () => {
@@ -111,7 +117,7 @@ export const fetchVisitorStats = createAsyncThunk('content/fetchVisitorStats', a
 
     const { data, error } = await supabase.from('visitor_counts').select('*').order('date', { ascending: false });
     
-    if (error || !data || data.length === 0) throw new Error("Data fetch error");
+    if (error || !data || data.length === 0) return initialState.visitorStats;
 
     const stats = {
       today: data.find(d => d.date === todayStr)?.count || 0,
@@ -127,7 +133,6 @@ export const fetchVisitorStats = createAsyncThunk('content/fetchVisitorStats', a
 
     return stats;
   } catch (e) {
-    // Return realistic fallback data on fetch failure to ensure dashboard stays populated
     return initialState.visitorStats;
   }
 });
@@ -136,7 +141,7 @@ export const incrementVisit = createAsyncThunk('content/incrementVisit', async (
   try {
     await supabase.rpc('increment_visitor_count');
   } catch (e) {
-    console.warn("Analytics increment failed (Table/Function likely missing). Using fallback data.");
+    console.warn("Analytics increment network failure.");
   } finally {
     dispatch(fetchVisitorStats());
   }
@@ -146,46 +151,115 @@ export const fetchAllContent = createAsyncThunk('content/fetchAll', async (_, { 
   dispatch(fetchVisitorStats());
   dispatch(fetchNotifications());
   
-  const results = await Promise.allSettled([
-    supabase.from('notices').select('*').order('date', { ascending: false }),
-    supabase.from('news_items').select('*').order('date', { ascending: false }),
-    supabase.from('pages').select('*').order('date', { ascending: false }),
-    supabase.from('carousel_items').select('*').order('id'),
-    supabase.from('home_widgets').select('*').order('id'),
-    supabase.from('sidebar_sections').select('*').order('order_index', { ascending: true }),
-    supabase.from('info_cards').select('*').order('order_index', { ascending: true }),
-    supabase.from('settings').select('value').eq('key', 'topBarConfig'),
-    supabase.from('settings').select('value').eq('key', 'footerConfig'),
-    supabase.from('settings').select('value').eq('key', 'schoolInfo'),
-    supabase.from('settings').select('value').eq('key', 'seoMeta'),
-    supabase.from('settings').select('value').eq('key', 'menuItems'),
-    supabase.from('settings').select('value').eq('key', 'carouselItems'),
-  ]);
+  try {
+    const results = await Promise.allSettled([
+      supabase.from('notices').select('*').order('date', { ascending: false }),
+      supabase.from('news_items').select('*').order('date', { ascending: false }),
+      supabase.from('pages').select('*').order('date', { ascending: false }),
+      supabase.from('carousel_items').select('*').order('id'),
+      supabase.from('home_widgets').select('*').order('id'),
+      supabase.from('sidebar_sections').select('*').order('order_index', { ascending: true }),
+      supabase.from('info_cards').select('*').order('order_index', { ascending: true }),
+      supabase.from('settings').select('value').eq('key', 'topBarConfig'),
+      supabase.from('settings').select('value').eq('key', 'footerConfig'),
+      supabase.from('settings').select('value').eq('key', 'schoolInfo'),
+      supabase.from('settings').select('value').eq('key', 'seoMeta'),
+      supabase.from('settings').select('value').eq('key', 'menuItems'),
+      supabase.from('settings').select('value').eq('key', 'carouselItems'),
+      supabase.from('teachers').select('*').order('created_at', { ascending: false }),
+      supabase.from('employees').select('*').order('created_at', { ascending: false }),
+      supabase.from('results').select('*').order('exam_year', { ascending: false }),
+    ]);
 
-  const data: any = {};
-  if (results[0].status === 'fulfilled' && results[0].value.data) data.notices = results[0].value.data;
-  if (results[1].status === 'fulfilled' && results[1].value.data) data.news = results[1].value.data;
-  if (results[2].status === 'fulfilled' && results[2].value.data) data.pages = results[2].value.data;
-  if (results[3].status === 'fulfilled' && results[3].value.data) data.carouselItems = results[3].value.data;
-  if (results[4].status === 'fulfilled' && results[4].value.data) data.homeWidgets = results[4].value.data;
-  if (results[5].status === 'fulfilled' && results[5].value.data) data.sidebarSections = results[5].value.data;
-  if (results[6].status === 'fulfilled' && results[6].value.data) {
-    data.infoCards = results[6].value.data.map((item: any) => ({
-        id: item.id,
-        title: item.title,
-        iconName: item.icon_name,
-        imageUrl: item.image_url,
-        links: item.links
-    }));
+    const data: any = {};
+    if (results[0].status === 'fulfilled' && results[0].value.data) data.notices = results[0].value.data;
+    if (results[1].status === 'fulfilled' && results[1].value.data) data.news = results[1].value.data;
+    if (results[2].status === 'fulfilled' && results[2].value.data) data.pages = results[2].value.data;
+    if (results[3].status === 'fulfilled' && results[3].value.data) data.carouselItems = results[3].value.data;
+    if (results[4].status === 'fulfilled' && results[4].value.data) data.homeWidgets = results[4].value.data;
+    if (results[5].status === 'fulfilled' && results[5].value.data) data.sidebarSections = results[5].value.data;
+    if (results[6].status === 'fulfilled' && results[6].value.data) {
+      data.infoCards = results[6].value.data.map((item: any) => ({
+          id: item.id,
+          title: item.title,
+          iconName: item.icon_name,
+          imageUrl: item.image_url,
+          links: item.links
+      }));
+    }
+    if (results[7].status === 'fulfilled' && results[7].value.data?.length) data.topBarConfig = results[7].value.data[0]?.value;
+    if (results[8].status === 'fulfilled' && results[8].value.data?.length) data.footerConfig = results[8].value.data[0]?.value;
+    if (results[9].status === 'fulfilled' && results[9].value.data?.length) data.schoolInfo = results[9].value.data[0]?.value;
+    if (results[10].status === 'fulfilled' && results[10].value.data?.length) data.seoMeta = results[10].value.data[0]?.value;
+    if (results[11].status === 'fulfilled' && results[11].value.data?.length) data.menuItems = results[11].value.data[0]?.value;
+    // Fix: Using correct results array instead of Encyclopedia
+    if (results[12].status === 'fulfilled' && results[12].value.data?.length) data.carouselItems = results[12].value.data[0]?.value;
+    if (results[13].status === 'fulfilled' && results[13].value.data) data.teachers = results[13].value.data;
+    if (results[14].status === 'fulfilled' && results[14].value.data) data.employees = results[14].value.data;
+    if (results[15].status === 'fulfilled' && results[15].value.data) data.results = results[15].value.data;
+
+    return data;
+  } catch (e) {
+    console.error("Critical content fetch error:", e);
+    return {};
   }
-  if (results[7].status === 'fulfilled' && results[7].value.data?.length) data.topBarConfig = results[7].value.data[0]?.value;
-  if (results[8].status === 'fulfilled' && results[8].value.data?.length) data.footerConfig = results[8].value.data[0]?.value;
-  if (results[9].status === 'fulfilled' && results[9].value.data?.length) data.schoolInfo = results[9].value.data[0]?.value;
-  if (results[10].status === 'fulfilled' && results[10].value.data?.length) data.seoMeta = results[10].value.data[0]?.value;
-  if (results[11].status === 'fulfilled' && results[11].value.data?.length) data.menuItems = results[11].value.data[0]?.value;
-  if (results[12].status === 'fulfilled' && results[12].value.data?.length) data.carouselItems = results[12].value.data[0]?.value;
+});
 
-  return data;
+export const addResultThunk = createAsyncThunk('content/addResult', async (result: Result) => {
+  const { id, ...payload } = result;
+  const { data, error } = await supabase.from('results').insert([payload]).select().single();
+  if (error) throw error;
+  return data as Result;
+});
+
+export const updateResultThunk = createAsyncThunk('content/updateResult', async (result: Result) => {
+  const { id, ...payload } = result;
+  const { data, error } = await supabase.from('results').update(payload).eq('id', id).select().single();
+  if (error) throw error;
+  return data as Result;
+});
+
+export const deleteResultThunk = createAsyncThunk('content/deleteResult', async (id: string) => {
+  await supabase.from('results').delete().eq('id', id);
+  return id;
+});
+
+export const addTeacherThunk = createAsyncThunk('content/addTeacher', async (teacher: Teacher) => {
+  const { id, ...payload } = teacher;
+  const { data, error } = await supabase.from('teachers').insert([payload]).select().single();
+  if (error) throw error;
+  return data as Teacher;
+});
+
+export const updateTeacherThunk = createAsyncThunk('content/updateTeacher', async (teacher: Teacher) => {
+  const { id, ...payload } = teacher;
+  const { data, error } = await supabase.from('teachers').update(payload).eq('id', id).select().single();
+  if (error) throw error;
+  return data as Teacher;
+});
+
+export const deleteTeacherThunk = createAsyncThunk('content/deleteTeacher', async (id: string) => {
+  await supabase.from('teachers').delete().eq('id', id);
+  return id;
+});
+
+export const addEmployeeThunk = createAsyncThunk('content/addEmployee', async (employee: Employee) => {
+  const { id, ...payload } = employee;
+  const { data, error } = await supabase.from('employees').insert([payload]).select().single();
+  if (error) throw error;
+  return data as Employee;
+});
+
+export const updateEmployeeThunk = createAsyncThunk('content/updateEmployee', async (employee: Employee) => {
+  const { id, ...payload } = employee;
+  const { data, error } = await supabase.from('employees').update(payload).eq('id', id).select().single();
+  if (error) throw error;
+  return data as Employee;
+});
+
+export const deleteEmployeeThunk = createAsyncThunk('content/deleteEmployee', async (id: string) => {
+  await supabase.from('employees').delete().eq('id', id);
+  return id;
 });
 
 export const addNoticeThunk = createAsyncThunk('content/addNotice', async (notice: Notice) => {
@@ -308,6 +382,15 @@ const contentSlice = createSlice({
           n.id === action.payload ? { ...n, is_read: true } : n
         );
       })
+      .addCase(addResultThunk.fulfilled, (state, action) => { state.results.unshift(action.payload); })
+      .addCase(updateResultThunk.fulfilled, (state, action) => { state.results = state.results.map(r => r.id === action.payload.id ? action.payload : r); })
+      .addCase(deleteResultThunk.fulfilled, (state, action) => { state.results = state.results.filter(r => r.id !== action.payload); })
+      .addCase(addTeacherThunk.fulfilled, (state, action) => { state.teachers.unshift(action.payload); })
+      .addCase(updateTeacherThunk.fulfilled, (state, action) => { state.teachers = state.teachers.map(t => t.id === action.payload.id ? action.payload : t); })
+      .addCase(deleteTeacherThunk.fulfilled, (state, action) => { state.teachers = state.teachers.filter(t => t.id !== action.payload); })
+      .addCase(addEmployeeThunk.fulfilled, (state, action) => { state.employees.unshift(action.payload); })
+      .addCase(updateEmployeeThunk.fulfilled, (state, action) => { state.employees = state.employees.map(e => e.id === action.payload.id ? action.payload : e); })
+      .addCase(deleteEmployeeThunk.fulfilled, (state, action) => { state.employees = state.employees.filter(e => e.id !== action.payload); })
       .addCase(addNoticeThunk.fulfilled, (state, action) => { state.notices.unshift(action.payload); })
       .addCase(updateNoticeThunk.fulfilled, (state, action) => { state.notices = state.notices.map(n => n.id === action.payload.id ? action.payload : n); })
       .addCase(addNewsThunk.fulfilled, (state, action) => { state.news.unshift(action.payload); })
